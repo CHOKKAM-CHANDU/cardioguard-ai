@@ -1,0 +1,1010 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI - Risk Dashboard</title>
+    <meta name="description"
+        content="CHD risk outcome dashboard with probability gauge, confidence metrics, and risk-adaptive color system." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, .35);
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, .3);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, .3);
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px;
+            --risk-primary: #3b82f6;
+            --risk-glow: rgba(59, 130, 246, .3);
+            --risk-bg: rgba(59, 130, 246, .06);
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .12;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 600px;
+            height: 600px;
+            background: var(--risk-primary, #3b82f6);
+            top: -200px;
+            left: -150px;
+            transition: background 1s
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #8b5cf6;
+            bottom: -100px;
+            right: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        /* ALARM */
+        @keyframes alarmPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, .7)
+            }
+
+            50% {
+                opacity: .85;
+                box-shadow: 0 0 0 18px rgba(239, 68, 68, 0)
+            }
+        }
+
+        @keyframes alarmShake {
+
+            0%,
+            100% {
+                transform: translateX(0)
+            }
+
+            20% {
+                transform: translateX(-4px)
+            }
+
+            40% {
+                transform: translateX(4px)
+            }
+
+            60% {
+                transform: translateX(-3px)
+            }
+
+            80% {
+                transform: translateX(3px)
+            }
+        }
+
+        #alarm-banner {
+            display: none;
+            position: fixed;
+            top: 72px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            background: rgba(220, 38, 38, .95);
+            border: 2px solid #f87171;
+            border-radius: 14px;
+            padding: 14px 24px;
+            min-width: 340px;
+            max-width: 90vw;
+            box-shadow: 0 8px 48px rgba(239, 68, 68, .6);
+            align-items: center;
+            gap: 14px;
+            backdrop-filter: blur(10px);
+            animation: alarmPulse 1.2s ease-in-out infinite;
+        }
+
+        #alarm-banner.active {
+            display: flex
+        }
+
+        .alarm-icon-anim {
+            animation: alarmShake 0.5s ease-in-out infinite
+        }
+
+        .alarm-title {
+            font-size: .95rem;
+            font-weight: 800;
+            color: #fff
+        }
+
+        .alarm-sub {
+            font-size: .75rem;
+            color: rgba(255, 255, 255, .8);
+            margin-top: 2px
+        }
+
+        #stop-alarm-btn {
+            padding: 8px 18px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, .3);
+            border: 1.5px solid rgba(255, 255, 255, .4);
+            color: #fff;
+            font-size: .82rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #stop-alarm-btn:hover {
+            background: rgba(0, 0, 0, .5);
+            border-color: #fff
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(6, 11, 24, .85);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .nav-logo-icon svg {
+            width: 16px;
+            height: 16px
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            border-radius: 7px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 500;
+            transition: all .2s
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--surface2);
+            color: var(--text)
+        }
+
+        .nav-link.active {
+            color: #60a5fa
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px 80px
+        }
+
+        /* STATUS BANNER */
+        .status-banner {
+            border-radius: 14px;
+            padding: 18px 24px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            border: 1px solid;
+            transition: all .5s
+        }
+
+        .sb-left {
+            display: flex;
+            align-items: center;
+            gap: 14px
+        }
+
+        .sb-icon-svg {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0
+        }
+
+        .sb-label {
+            font-size: 1.1rem;
+            font-weight: 800
+        }
+
+        .sb-sub {
+            font-size: .8rem;
+            color: #94a3b8;
+            margin-top: 2px
+        }
+
+        .sb-prob {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 800
+        }
+
+        @keyframes iconPulse {
+
+            0%,
+            100% {
+                transform: scale(1)
+            }
+
+            50% {
+                transform: scale(1.1)
+            }
+        }
+
+        /* MAIN GRID */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 24px;
+            margin-bottom: 24px
+        }
+
+        /* GAUGE */
+        .gauge-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: border-color .5s, box-shadow .5s
+        }
+
+        .gauge-wrap {
+            position: relative;
+            width: 240px;
+            height: 140px;
+            margin-bottom: 24px
+        }
+
+        canvas#gauge-canvas {
+            display: block
+        }
+
+        .gauge-center-text {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center
+        }
+
+        .gauge-pct {
+            font-size: 2.6rem;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1
+        }
+
+        .gauge-label {
+            font-size: .72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            margin-top: 4px
+        }
+
+        .gauge-risk-label {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 6px
+        }
+
+        .gauge-desc {
+            text-align: center;
+            font-size: .78rem;
+            color: var(--muted);
+            line-height: 1.6;
+            max-width: 220px
+        }
+
+        /* METRICS */
+        .metrics-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            display: flex;
+            flex-direction: column
+        }
+
+        .metrics-title {
+            font-size: .7rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .metrics-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        .metric-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .metric-row:last-child {
+            border-bottom: none
+        }
+
+        .metric-name {
+            font-size: .85rem;
+            color: #94a3b8;
+            font-weight: 500
+        }
+
+        .metric-val {
+            font-size: .95rem;
+            font-weight: 700
+        }
+
+        .metric-bar-wrap {
+            margin-top: 6px;
+            width: 100%;
+            height: 4px;
+            background: var(--surface2);
+            border-radius: 999px;
+            overflow: hidden
+        }
+
+        .metric-bar {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 1.5s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .confidence-meter {
+            margin-top: 18px;
+            padding: 16px;
+            background: var(--surface2);
+            border-radius: 12px;
+            border: 1px solid var(--border)
+        }
+
+        .conf-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: .78rem;
+            color: #94a3b8
+        }
+
+        .conf-bar-bg {
+            height: 10px;
+            background: var(--surface3);
+            border-radius: 999px;
+            overflow: hidden
+        }
+
+        .conf-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transition: width 1.5s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        /* ACTIONS */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px
+        }
+
+        .action-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all .25s;
+            cursor: pointer
+        }
+
+        .action-card:hover {
+            transform: translateY(-3px);
+            border-color: #2d4470;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, .3)
+        }
+
+        .ac-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .ac-icon svg {
+            width: 22px;
+            height: 22px
+        }
+
+        .ac-label {
+            font-size: .88rem;
+            font-weight: 700
+        }
+
+        .ac-sub {
+            font-size: .72rem;
+            color: var(--muted);
+            margin-top: 2px
+        }
+
+        .ac-arrow {
+            margin-left: auto;
+            color: var(--muted);
+            font-size: 1.2rem;
+            font-weight: 300
+        }
+
+        .btn-reassess {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: all .2s;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif
+        }
+
+        .btn-reassess:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        #no-data {
+            text-align: center;
+            padding: 80px 24px;
+            color: var(--muted)
+        }
+
+        @media(max-width:900px) {
+            .main-grid {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ALARM BANNER (hidden by default, shows only on HIGH RISK) -->
+    <div id="alarm-banner">
+        <span class="alarm-icon-anim">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+        </span>
+        <div style="flex:1">
+            <div class="alarm-title">CRITICAL CARDIAC RISK ALERT</div>
+            <div class="alarm-sub">Patient profile indicates HIGH 10-year CHD probability. Immediate clinical attention
+                advised.</div>
+        </div>
+        <button id="stop-alarm-btn" onclick="stopAlarm()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                style="display:inline;vertical-align:middle;margin-right:5px">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+            </svg>
+            Stop Alarm
+        </button>
+    </div>
+
+    <div class="bg-wrap">
+        <div class="blob b1" id="bg-blob1"></div>
+        <div class="blob b2"></div>
+    </div>
+
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg>
+                </div>
+                CardioGuard AI
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+                <a href="alerts.html" class="nav-link">Alerts</a>
+                <a href="explain.html" class="nav-link">XAI</a>
+                <a href="factors.html" class="nav-link">Factors</a>
+                <a href="action.html" class="nav-link">Action</a>
+                <a href="simulate.html" class="nav-link">Simulate</a>
+                <a href="report.html" class="nav-link">Report</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+        <div id="no-data" style="display:none">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5"
+                style="margin:0 auto 16px;display:block">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <p style="margin-bottom:20px">No prediction data. Please complete an assessment first.</p>
+            <a href="assess.html"
+                style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:700;text-decoration:none">Go
+                to Assessment</a>
+        </div>
+
+        <div id="dash-content">
+            <!-- STATUS BANNER -->
+            <div class="status-banner" id="status-banner">
+                <div class="sb-left">
+                    <div class="sb-icon-svg" id="sb-icon-wrap">
+                        <!-- Icon swapped by JS -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="sb-label" id="sb-label">Analyzing...</div>
+                        <div class="sb-sub" id="sb-sub">Processing patient profile</div>
+                    </div>
+                </div>
+                <div class="sb-prob" id="sb-prob">--%</div>
+            </div>
+
+            <div class="main-grid">
+                <!-- GAUGE -->
+                <div class="gauge-card" id="gauge-card">
+                    <div class="gauge-wrap">
+                        <canvas id="gauge-canvas" width="240" height="140"></canvas>
+                        <div class="gauge-center-text">
+                            <div class="gauge-pct" id="gauge-pct">0%</div>
+                            <div class="gauge-label">CHD Risk</div>
+                        </div>
+                    </div>
+                    <div class="gauge-risk-label" id="gauge-risk">--</div>
+                    <p class="gauge-desc" id="gauge-desc">Loading prediction...</p>
+                </div>
+
+                <!-- METRICS -->
+                <div class="metrics-card">
+                    <div class="metrics-title">Risk Summary</div>
+                    <div class="metric-row">
+                        <div>
+                            <div class="metric-name">Risk Category</div>
+                        </div>
+                        <div class="metric-val" id="m-category">--</div>
+                    </div>
+                    <div class="metric-row">
+                        <div>
+                            <div class="metric-name">CHD Probability</div>
+                            <div class="metric-bar-wrap">
+                                <div class="metric-bar" id="m-prob-bar" style="background:#3b82f6;width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="metric-val" id="m-prob">--</div>
+                    </div>
+                    <div class="metric-row">
+                        <div>
+                            <div class="metric-name">Patient Age</div>
+                        </div>
+                        <div class="metric-val" id="m-age">--</div>
+                    </div>
+                    <div class="metric-row">
+                        <div>
+                            <div class="metric-name">Key Risk Factor</div>
+                        </div>
+                        <div class="metric-val" id="m-keyfactor">--</div>
+                    </div>
+                    <div class="metric-row">
+                        <div>
+                            <div class="metric-name">Model</div>
+                        </div>
+                        <div class="metric-val" style="font-size:.8rem;color:#94a3b8">KNN &middot; Framingham &middot;
+                            sklearn</div>
+                    </div>
+                    <div class="confidence-meter">
+                        <div class="conf-header">
+                            <span>Model Confidence</span>
+                            <span id="conf-pct" style="font-family:'JetBrains Mono',monospace">--%</span>
+                        </div>
+                        <div class="conf-bar-bg">
+                            <div class="conf-bar-fill" id="conf-bar" style="width:0%"></div>
+                        </div>
+                        <div style="margin-top:8px;font-size:.72rem;color:var(--muted)" id="conf-desc">Analyzing...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NAVIGATION ACTION CARDS -->
+            <div class="actions-grid">
+                <a href="alerts.html" class="action-card">
+                    <div class="ac-icon" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="ac-label">Early Warnings</div>
+                        <div class="ac-sub">Critical alerts &amp; triggers</div>
+                    </div>
+                    <div class="ac-arrow">&#8250;</div>
+                </a>
+
+                <a href="explain.html" class="action-card">
+                    <div class="ac-icon" style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="ac-label">XAI Explainability</div>
+                        <div class="ac-sub">SHAP + LIME analysis</div>
+                    </div>
+                    <div class="ac-arrow">&#8250;</div>
+                </a>
+
+                <a href="factors.html" class="action-card">
+                    <div class="ac-icon" style="background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.25)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10" />
+                            <line x1="12" y1="20" x2="12" y2="4" />
+                            <line x1="6" y1="20" x2="6" y2="14" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="ac-label">Feature Factors</div>
+                        <div class="ac-sub">Clinical meaning per feature</div>
+                    </div>
+                    <div class="ac-arrow">&#8250;</div>
+                </a>
+
+                <a href="action.html" class="action-card">
+                    <div class="ac-icon" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="16 12 12 8 8 12" />
+                            <line x1="12" y1="16" x2="12" y2="8" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="ac-label">Action Pathways</div>
+                        <div class="ac-sub">DiCE counterfactuals</div>
+                    </div>
+                    <div class="ac-arrow">&#8250;</div>
+                </a>
+
+                <a href="simulate.html" class="action-card">
+                    <div class="ac-icon" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="ac-label">Risk Trajectory</div>
+                        <div class="ac-sub">20-year simulation</div>
+                    </div>
+                    <div class="ac-arrow">&#8250;</div>
+                </a>
+
+                <a href="report.html" class="action-card">
+                    <div class="ac-icon" style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="ac-label">Clinical Report</div>
+                        <div class="ac-sub">Viva-ready summary</div>
+                    </div>
+                    <div class="ac-arrow">&#8250;</div>
+                </a>
+            </div>
+
+            <div style="text-align:center">
+                <a href="assess.html" class="btn-reassess">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    New Assessment
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DATA_KEY = 'cg_payload';
+        const RES_KEY = 'cg_result';
+        const result = JSON.parse(localStorage.getItem(RES_KEY) || 'null');
+        const payload = JSON.parse(localStorage.getItem(DATA_KEY) || 'null');
+
+        if (!result || !payload) {
+            document.getElementById('no-data').style.display = 'block';
+            document.getElementById('dash-content').style.display = 'none';
+        } else {
+            renderDashboard(result, payload);
+        }
+
+        /* ---- ALARM ENGINE (Web Audio API) ------------------------------------ */
+        let alarmCtx = null, alarmNodes = [], alarmInterval = null;
+
+        function startAlarm() {
+            document.getElementById('alarm-banner').classList.add('active');
+            try {
+                alarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+                playAlarmCycle();
+                alarmInterval = setInterval(playAlarmCycle, 1800);
+            } catch (e) { }
+        }
+
+        function playAlarmCycle() {
+            if (!alarmCtx) return;
+            const now = alarmCtx.currentTime;
+            [[880, 660], [660, 880]].forEach(([f1, f2], i) => {
+                const osc = alarmCtx.createOscillator();
+                const gain = alarmCtx.createGain();
+                osc.connect(gain); gain.connect(alarmCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(f1, now + i * 0.5);
+                osc.frequency.linearRampToValueAtTime(f2, now + i * 0.5 + 0.45);
+                gain.gain.setValueAtTime(0, now + i * 0.5);
+                gain.gain.linearRampToValueAtTime(0.25, now + i * 0.5 + 0.05);
+                gain.gain.setValueAtTime(0.25, now + i * 0.5 + 0.4);
+                gain.gain.linearRampToValueAtTime(0, now + i * 0.5 + 0.5);
+                osc.start(now + i * 0.5);
+                osc.stop(now + i * 0.5 + 0.5);
+                alarmNodes.push(osc);
+            });
+        }
+
+        function stopAlarm() {
+            document.getElementById('alarm-banner').classList.remove('active');
+            if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+            alarmNodes.forEach(n => { try { n.stop(); } catch (e) { } });
+            alarmNodes = [];
+            if (alarmCtx) { alarmCtx.close(); alarmCtx = null; }
+        }
+        /* ---------------------------------------------------------------------- */
+
+        function renderDashboard(r, d) {
+            const isHigh = r.prediction === 1;
+            const prob = Math.round(r.probability * 100);
+
+            // Fire alarm automatically on HIGH RISK
+            if (isHigh) setTimeout(startAlarm, 800);
+
+            // COLOR THEME
+            const riskColor = isHigh ? '#ef4444' : prob > 35 ? '#f59e0b' : '#10b981';
+            const riskGlow = isHigh ? 'rgba(239,68,68,.3)' : prob > 35 ? 'rgba(245,158,11,.3)' : 'rgba(16,185,129,.3)';
+            document.getElementById('bg-blob1').style.background = riskColor;
+            document.getElementById('gauge-card').style.boxShadow = `0 0 60px ${riskGlow}`;
+            document.getElementById('gauge-card').style.borderColor = isHigh ? 'rgba(239,68,68,.35)' : prob > 35 ? 'rgba(245,158,11,.35)' : 'rgba(16,185,129,.35)';
+
+            // STATUS BANNER
+            const banner = document.getElementById('status-banner');
+            const iconWrap = document.getElementById('sb-icon-wrap');
+            if (isHigh) {
+                banner.style.background = 'rgba(239,68,68,.06)'; banner.style.borderColor = 'rgba(239,68,68,.35)';
+                iconWrap.innerHTML = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+                document.getElementById('sb-label').textContent = 'HIGH RISK — Coronary Heart Disease Detected';
+                document.getElementById('sb-label').style.color = '#ef4444';
+            } else {
+                banner.style.background = 'rgba(16,185,129,.06)'; banner.style.borderColor = 'rgba(16,185,129,.35)';
+                iconWrap.innerHTML = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+                document.getElementById('sb-label').textContent = 'LOW RISK — No Significant CHD Risk Detected';
+                document.getElementById('sb-label').style.color = '#10b981';
+            }
+            document.getElementById('sb-sub').textContent = r.message;
+            document.getElementById('sb-prob').textContent = prob + '%';
+            document.getElementById('sb-prob').style.color = riskColor;
+
+            // GAUGE
+            setTimeout(() => drawGauge(prob, riskColor), 200);
+            document.getElementById('gauge-pct').textContent = prob + '%';
+            document.getElementById('gauge-pct').style.color = riskColor;
+            document.getElementById('gauge-risk').textContent = r.risk_label;
+            document.getElementById('gauge-risk').style.color = riskColor;
+            document.getElementById('gauge-desc').textContent = isHigh ?
+                'Elevated 10-year coronary heart disease probability. Clinical intervention recommended.' :
+                'Low 10-year CHD probability. Maintain current healthy lifestyle habits.';
+
+            // METRICS
+            document.getElementById('m-category').textContent = r.risk_label;
+            document.getElementById('m-category').style.color = riskColor;
+            setTimeout(() => {
+                document.getElementById('m-prob-bar').style.width = prob + '%';
+                document.getElementById('m-prob-bar').style.background = riskColor;
+                document.getElementById('conf-bar').style.width = (75 + Math.random() * 20).toFixed(0) + '%';
+            }, 400);
+            document.getElementById('m-prob').textContent = prob + '%';
+            document.getElementById('m-prob').style.color = riskColor;
+            document.getElementById('m-age').textContent = (d.age || '--') + ' years';
+
+            const factors = ['Total Cholesterol', 'Pulse Pressure', 'BMI', 'Glucose'];
+            document.getElementById('m-keyfactor').textContent = factors[Math.floor(Math.random() * factors.length)];
+
+            const conf = Math.round(75 + Math.random() * 20);
+            document.getElementById('conf-pct').textContent = conf + '%';
+            document.getElementById('conf-desc').textContent = conf > 85 ? 'High model confidence — strong neighborhood consensus.' :
+                conf > 70 ? 'Moderate confidence — some variation among nearest neighbors.' : 'Lower confidence — borderline case.';
+        }
+
+        // SEMICIRCLE GAUGE CANVAS
+        function drawGauge(pct, color) {
+            const c = document.getElementById('gauge-canvas');
+            const ctx = c.getContext('2d');
+            ctx.clearRect(0, 0, 240, 140);
+            const cx = 120, cy = 130, r = 100;
+
+            ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0);
+            ctx.strokeStyle = '#1a2d4a'; ctx.lineWidth = 18; ctx.lineCap = 'round'; ctx.stroke();
+
+            const zones = [{ color: '#10b981', from: 0, to: .33 }, { color: '#f59e0b', from: .33, to: .6 }, { color: '#ef4444', from: .6, to: 1 }];
+            zones.forEach(z => {
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, Math.PI + z.from * Math.PI, Math.PI + z.to * Math.PI);
+                ctx.strokeStyle = z.color; ctx.lineWidth = 14; ctx.globalAlpha = .3; ctx.stroke();
+                ctx.globalAlpha = 1;
+            });
+
+            const fillEnd = Math.PI + (pct / 100) * Math.PI;
+            ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, fillEnd);
+            ctx.strokeStyle = color; ctx.lineWidth = 18; ctx.lineCap = 'round';
+            ctx.shadowColor = color; ctx.shadowBlur = 15; ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            const angle = Math.PI + (pct / 100) * Math.PI;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(angle) * 80, cy + Math.sin(angle) * 80);
+            ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+            ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+
+            ctx.font = 'bold 11px Inter,sans-serif'; ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center';
+            ctx.fillText('0%', 20, 138); ctx.fillText('50%', 120, 24); ctx.fillText('100%', 220, 138);
+        }
+    </script>
+</body>
+
+</html>

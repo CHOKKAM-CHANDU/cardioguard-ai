@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI – Risk Trajectory Simulation</title>
+    <meta name="description"
+        content="20-year CHD risk trajectory simulation with three lifestyle scenarios, danger age threshold, and interpretation text." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .1;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 550px;
+            height: 550px;
+            background: #f59e0b;
+            top: -200px;
+            right: -100px
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #8b5cf6;
+            bottom: -100px;
+            left: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(6, 11, 24, .85);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .nav-logo-icon svg {
+            width: 16px;
+            height: 16px
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            border-radius: 7px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 500;
+            transition: all .2s
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--surface2);
+            color: var(--text)
+        }
+
+        .nav-link.active {
+            color: #fcd34d
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 36px 24px 80px
+        }
+
+        .grad-text {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        .page-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, .1);
+            border: 1px solid rgba(245, 158, 11, .3);
+            color: #fcd34d;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-bottom: 14px
+        }
+
+        h1 {
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 8px
+        }
+
+        .page-desc {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-bottom: 32px
+        }
+
+        /* LOAD WRAP */
+        .load-wrap {
+            text-align: center;
+            margin-bottom: 28px
+        }
+
+        .btn-load {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: #fff;
+            font-size: .95rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all .3s;
+            box-shadow: 0 4px 24px rgba(245, 158, 11, .3)
+        }
+
+        .btn-load:hover {
+            transform: translateY(-2px)
+        }
+
+        .btn-load:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, .3);
+            border-top-color: #fff;
+            animation: spin .7s linear infinite;
+            display: none
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* SCENARIO CARDS */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px
+        }
+
+        .sc-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            border-left: 4px solid;
+            transition: all .3s
+        }
+
+        .sc-card:hover {
+            transform: translateY(-2px)
+        }
+
+        .sc-label {
+            font-size: .68rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 6px
+        }
+
+        .sc-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 2px
+        }
+
+        .sc-sub {
+            font-size: .72rem;
+            color: var(--muted)
+        }
+
+        .sc-change {
+            font-size: .8rem;
+            font-weight: 600;
+            margin-top: 6px
+        }
+
+        /* PLOT */
+        .plot-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px
+        }
+
+        .section-title {
+            font-size: .7rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        .plot-img {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            display: block
+        }
+
+        /* LEGEND */
+        .legend-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 16px
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .8rem;
+            color: #94a3b8
+        }
+
+        .legend-line {
+            width: 28px;
+            height: 3px;
+            border-radius: 2px
+        }
+
+        /* INTERPRETATION */
+        .interpretation-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px
+        }
+
+        .interp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px
+        }
+
+        .interp-card {
+            padding: 16px;
+            background: var(--surface2);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-left: 4px solid
+        }
+
+        .interp-title {
+            font-size: .8rem;
+            font-weight: 700;
+            margin-bottom: 6px
+        }
+
+        .interp-text {
+            font-size: .78rem;
+            color: #94a3b8;
+            line-height: 1.6
+        }
+
+        /* DANGER ALERT */
+        .danger-alert {
+            background: rgba(239, 68, 68, .06);
+            border: 1px solid rgba(239, 68, 68, .3);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px
+        }
+
+        .da-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            margin-top: 2px
+        }
+
+        .da-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: #f87171;
+            margin-bottom: 4px
+        }
+
+        .da-text {
+            font-size: .8rem;
+            color: #94a3b8;
+            line-height: 1.5
+        }
+
+        /* GOOD ALERT */
+        .good-alert {
+            background: rgba(16, 185, 129, .06);
+            border: 1px solid rgba(16, 185, 129, .3);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px
+        }
+
+        .ga-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            margin-top: 2px
+        }
+
+        .ga-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: #6ee7b7;
+            margin-bottom: 4px
+        }
+
+        #loading-box {
+            display: none;
+            text-align: center;
+            padding: 48px
+        }
+
+        .big-spin {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 4px solid var(--surface3);
+            border-top-color: var(--warn);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border-radius: 9px;
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: all .2s
+        }
+
+        .btn-nav:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        .btn-next {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: #fff;
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 700;
+            transition: all .2s
+        }
+
+        .btn-next:hover {
+            transform: translateY(-1px)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-wrap">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+    </div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg></div>
+                CardioGuard AI
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="alerts.html" class="nav-link">Alerts</a>
+                <a href="explain.html" class="nav-link">XAI</a>
+                <a href="factors.html" class="nav-link">Factors</a>
+                <a href="action.html" class="nav-link">Action</a>
+                <a href="simulate.html" class="nav-link active">Simulate</a>
+                <a href="report.html" class="nav-link">Report</a>
+            </div>
+        </div>
+    </nav>
+    <div class="page-wrap">
+        <div class="page-tag">Risk Trajectory · 20-Year Simulation</div>
+        <h1>Risk <span class="grad-text">Trajectory Simulation</span></h1>
+        <p class="page-desc">Three lifestyle scenarios projected over 20 years using the trained KNN model with
+            age-progressive biomarker evolution. Identifies danger thresholds and optimal intervention windows.</p>
+
+        <div class="load-wrap" id="load-wrap">
+            <button class="btn-load" id="load-btn" onclick="loadSimulation()">
+                📈 <span id="load-text">Run 20-Year Simulation</span>
+                <div class="spinner" id="spinner"></div>
+            </button>
+            <p style="margin-top:10px;font-size:.78rem;color:var(--muted)">Computes 60+ predictions × 3 scenarios × 21
+                time points</p>
+        </div>
+
+        <div id="loading-box">
+            <div class="big-spin"></div>
+            <p style="color:var(--muted)">Simulating risk trajectories…</p>
+        </div>
+        <div id="sim-result"></div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px">
+            <a href="action.html" class="btn-nav">← Action Plan</a>
+            <a href="report.html" class="btn-next">Clinical Report →</a>
+        </div>
+    </div>
+
+    <script>
+        const DATA_KEY = 'cg_payload';
+        const SIM_KEY = 'cg_sim';
+        const RES_KEY = 'cg_result';
+        const payload = JSON.parse(localStorage.getItem(DATA_KEY) || 'null');
+        const result = JSON.parse(localStorage.getItem(RES_KEY) || 'null');
+
+        const cachedSim = localStorage.getItem(SIM_KEY);
+        if (cachedSim) {
+            try { renderSim(JSON.parse(cachedSim)); document.getElementById('load-wrap').style.display = 'none'; } catch (e) { }
+        }
+
+        async function loadSimulation() {
+            if (!payload) { alert('No assessment data.'); return; }
+            const btn = document.getElementById('load-btn');
+            btn.disabled = true;
+            document.getElementById('spinner').style.display = 'block';
+            document.getElementById('load-text').textContent = 'Running…';
+            document.getElementById('loading-box').style.display = 'block';
+            document.getElementById('sim-result').innerHTML = '';
+            try {
+                const res = await fetch('/simulate', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload), signal: AbortSignal.timeout(120000)
+                });
+                if (!res.ok) throw new Error('Server ' + res.status);
+                const data = await res.json();
+                localStorage.setItem(SIM_KEY, JSON.stringify(data));
+                document.getElementById('loading-box').style.display = 'none';
+                document.getElementById('load-wrap').style.display = 'none';
+                renderSim(data);
+            } catch (err) {
+                document.getElementById('loading-box').style.display = 'none';
+                document.getElementById('sim-result').innerHTML = `<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:20px;color:#fca5a5">❌ ${err.message}</div>`;
+                btn.disabled = false;
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('load-text').textContent = 'Retry';
+            }
+        }
+
+        function renderSim(data) {
+            const s = data.summary;
+            const currentProb = result ? Math.round(result.probability * 100) : Math.round(s.current);
+            const baselineChange = s.baseline - s.current;
+            const worstChange = s.unhealthy - s.current;
+            const bestChange = s.healthy - s.current;
+
+            const dangerHtml = s.danger_age ? `
+    <div class="danger-alert">
+      <span class="da-icon">🚨</span>
+      <div>
+        <div class="da-title">Critical Danger Age Detected</div>
+        <div class="da-text">Under the <strong>unhealthy lifestyle trajectory</strong>, this patient's CHD risk is projected to exceed 50% (HIGH RISK threshold) by <strong>Age ${s.danger_age}</strong>. Without intervention, risk accelerates significantly after this point. This innovation feature identifies the exact tipping point for clinical urgency.</div>
+      </div>
+    </div>`: `
+    <div class="good-alert">
+      <span class="ga-icon">✅</span>
+      <div>
+        <div class="ga-title">No Critical Threshold Crossing Detected</div>
+        <div class="da-text">Even under the worsening lifestyle scenario, this patient is projected to remain below the 50% CHD risk threshold for the next 20 years. Continued health monitoring is still recommended.</div>
+      </div>
+    </div>`;
+
+            const html = `
+    ${dangerHtml}
+    <div class="scenario-grid">
+      <div class="sc-card" style="border-left-color:#6366f1">
+        <div class="sc-label">Current Risk</div>
+        <div class="sc-val" style="color:#818cf8">${s.current.toFixed(1)}%</div>
+        <div class="sc-sub">At assessment age</div>
+      </div>
+      <div class="sc-card" style="border-left-color:#fbbf24">
+        <div class="sc-label">10yr Baseline</div>
+        <div class="sc-val" style="color:#fbbf24">${s.baseline.toFixed(1)}%</div>
+        <div class="sc-sub">Habits unchanged</div>
+        <div class="sc-change" style="color:${baselineChange > 0 ? '#f87171' : '#6ee7b7'}">${baselineChange > 0 ? '↑' : ' ↓'} ${Math.abs(baselineChange).toFixed(1)}% vs now</div>
+      </div>
+      <div class="sc-card" style="border-left-color:#ef4444">
+        <div class="sc-label">10yr Worst Case</div>
+        <div class="sc-val" style="color:#ef4444">${s.unhealthy.toFixed(1)}%</div>
+        <div class="sc-sub">Habits worsen</div>
+        <div class="sc-change" style="color:#f87171">↑ ${Math.abs(worstChange).toFixed(1)}% vs now</div>
+      </div>
+      <div class="sc-card" style="border-left-color:#10b981">
+        <div class="sc-label">10yr Best Case</div>
+        <div class="sc-val" style="color:#10b981">${s.healthy.toFixed(1)}%</div>
+        <div class="sc-sub">Optimal habits</div>
+        <div class="sc-change" style="color:${bestChange < 0 ? '#6ee7b7' : '#f87171'}">${bestChange < 0 ? '↓ Reduced' : ' ↑ Increased'} ${Math.abs(bestChange).toFixed(1)}%</div>
+      </div>
+      ${s.danger_age ? `
+      <div class="sc-card" style="border-left-color:#dc2626">
+        <div class="sc-label">Danger Age</div>
+        <div class="sc-val" style="color:#dc2626">Age ${s.danger_age}</div>
+        <div class="sc-sub">50% threshold cross</div>
+      </div>`: ''}
+    </div>
+
+    <div class="plot-section">
+      <div class="section-title">20-Year Risk Trajectory — Three Lifestyle Scenarios</div>
+      <img src="data:image/png;base64,${data.sim_img}" class="plot-img" alt="Risk Trajectory Simulation"/>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-line" style="background:#ef4444"></div>Worsening Habits (↑ Cholesterol, ↑ BMI, ↑ Smoking)</div>
+        <div class="legend-item"><div class="legend-line" style="background:#fbbf24;border-top:2px dashed #fbbf24"></div>Status Quo (Only age increases)</div>
+        <div class="legend-item"><div class="legend-line" style="background:#10b981"></div>Optimal Habits (↓ Weight, Quit Smoking, Better Diet)</div>
+      </div>
+    </div>
+
+    <div class="interpretation-section">
+      <div class="section-title">Clinical Interpretation</div>
+      <div class="interp-grid">
+        <div class="interp-card" style="border-left-color:#ef4444">
+          <div class="interp-title" style="color:#f87171">🚧 Worsening Scenario</div>
+          <div class="interp-text">If cholesterol increases by ~4.5 mg/dL/year, BMI by 0.45/year, and smoking by 1 cig/year — the worst-case trajectory projects to ${s.unhealthy.toFixed(0)}% risk at 10 years. ${s.danger_age ? `Critical threshold crossed at age ${s.danger_age}.` : 'Risk remains manageable but elevated.'}</div>
+        </div>
+        <div class="interp-card" style="border-left-color:#fbbf24">
+          <div class="interp-title" style="color:#fbbf24">➡️ Status Quo Scenario</div>
+          <div class="interp-text">Maintaining current habits with only natural aging effects projects ${s.baseline.toFixed(0)}% risk at 10 years. This represents the 'do nothing' baseline — cardiovascular risk naturally increases with age due to arterial stiffening.</div>
+        </div>
+        <div class="interp-card" style="border-left-color:#10b981">
+          <div class="interp-title" style="color:#6ee7b7">✅ Optimal Scenario</div>
+          <div class="interp-text">With cholesterol reduction of ~3 mg/dL/year, gradual weight loss (0.25 BMI/year), and smoking cessation — the best-case trajectory projects ${s.healthy.toFixed(0)}% risk at 10 years. This demonstrates the measurable benefit of lifestyle intervention.</div>
+        </div>
+      </div>
+    </div>`;
+
+            document.getElementById('sim-result').innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>

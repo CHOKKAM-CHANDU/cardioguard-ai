@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI – Input Validation</title>
+    <meta name="description"
+        content="Pre-prediction input validation: missing value check, outlier detection, and feature normalization preview." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, .35);
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .1;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 600px;
+            height: 600px;
+            background: #06b6d4;
+            top: -200px;
+            right: -150px
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #8b5cf6;
+            bottom: -100px;
+            left: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(6, 11, 24, .85);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .nav-logo-icon svg {
+            width: 16px;
+            height: 16px
+        }
+
+        .nav-back {
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: .8rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all .2s
+        }
+
+        .nav-back:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px 80px
+        }
+
+        .grad-text {
+            background: linear-gradient(135deg, #60a5fa, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        .page-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(6, 182, 212, .1);
+            border: 1px solid rgba(6, 182, 212, .3);
+            color: #67e8f9;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-bottom: 14px
+        }
+
+        h1 {
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 8px
+        }
+
+        .page-desc {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-bottom: 36px
+        }
+
+        /* STATUS BAR */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 28px;
+            border: 1px solid
+        }
+
+        .status-bar.ok {
+            background: rgba(16, 185, 129, .06);
+            border-color: rgba(16, 185, 129, .3)
+        }
+
+        .status-bar.warn {
+            background: rgba(245, 158, 11, .06);
+            border-color: rgba(245, 158, 11, .3)
+        }
+
+        .status-bar.error {
+            background: rgba(239, 68, 68, .06);
+            border-color: rgba(239, 68, 68, .3)
+        }
+
+        .status-icon {
+            font-size: 1.2rem
+        }
+
+        .status-text {
+            font-size: .88rem;
+            font-weight: 600
+        }
+
+        /* VALIDATION CARDS */
+        .val-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px
+        }
+
+        .val-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden
+        }
+
+        .val-card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .val-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0
+        }
+
+        .val-card-title {
+            font-size: .9rem;
+            font-weight: 700
+        }
+
+        .val-card-body {
+            padding: 16px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        /* ITEM ROWS */
+        .val-item {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: var(--surface2);
+            border-radius: 9px;
+            border: 1px solid var(--border)
+        }
+
+        .val-item-name {
+            font-size: .8rem;
+            color: #cbd5e1;
+            font-weight: 500
+        }
+
+        .val-item-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .8rem;
+            color: #60a5fa
+        }
+
+        .val-item-status {
+            font-size: .7rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px
+        }
+
+        .s-ok {
+            background: rgba(16, 185, 129, .12);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, .3)
+        }
+
+        .s-warn {
+            background: rgba(245, 158, 11, .12);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, .3)
+        }
+
+        .s-err {
+            background: rgba(239, 68, 68, .12);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, .3)
+        }
+
+        /* DISTRIBUTION BARS */
+        .dist-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 28px
+        }
+
+        .dist-title {
+            font-size: .7rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--cyan);
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .dist-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        .dist-items {
+            display: flex;
+            flex-direction: column;
+            gap: 14px
+        }
+
+        .dist-item {}
+
+        .dist-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px
+        }
+
+        .dist-item-name {
+            font-size: .8rem;
+            color: #94a3b8
+        }
+
+        .dist-item-pct {
+            font-size: .78rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: #60a5fa
+        }
+
+        .dist-bar-bg {
+            height: 8px;
+            background: var(--surface2);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative
+        }
+
+        .dist-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 1.2s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .dist-marker {
+            position: absolute;
+            top: -3px;
+            height: 14px;
+            width: 2px;
+            background: #fff;
+            border-radius: 1px;
+            transform: translateX(-50%);
+            box-shadow: 0 0 6px rgba(255, 255, 255, .4)
+        }
+
+        .dist-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: .67rem;
+            color: var(--muted)
+        }
+
+        .dist-insight {
+            font-size: .75rem;
+            color: #94a3b8;
+            margin-top: 4px;
+            padding: 8px 12px;
+            background: var(--surface2);
+            border-radius: 7px;
+            border-left: 3px solid var(--cyan)
+        }
+
+        /* PROCEED CARD */
+        .proceed-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            text-align: center
+        }
+
+        .btn-proceed {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 44px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .3s;
+            box-shadow: 0 4px 30px var(--accent-glow);
+            text-decoration: none
+        }
+
+        .btn-proceed:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px var(--accent-glow)
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            background: transparent;
+            text-decoration: none;
+            margin-right: 12px
+        }
+
+        .btn-back:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        .proceed-note {
+            margin-top: 14px;
+            font-size: .78rem;
+            color: var(--muted)
+        }
+
+        #no-data {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--muted)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-wrap">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+    </div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg></div>
+                CardioGuard AI
+            </a>
+            <a href="assess.html" class="nav-back">← Back to Assessment</a>
+        </div>
+    </nav>
+    <div class="page-wrap">
+        <div class="page-tag">Step 2 of 5 · Input Validation</div>
+        <h1><span class="grad-text">Input Sanity Check</span></h1>
+        <p class="page-desc">Pre-prediction verification of missing values, outlier detection, and feature distribution
+            positioning.</p>
+
+        <div id="no-data" style="display:none">
+            <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
+            <p style="font-size:1rem;margin-bottom:20px">No assessment data found. Please complete the assessment first.
+            </p>
+            <a href="assess.html" class="btn-proceed" style="text-decoration:none;display:inline-flex">Go to
+                Assessment</a>
+        </div>
+
+        <div id="val-content">
+            <!-- Dynamically generated -->
+        </div>
+    </div>
+
+    <script>
+        const DATA_KEY = 'cg_payload';
+        const rawData = localStorage.getItem(DATA_KEY);
+
+        if (!rawData) {
+            document.getElementById('no-data').style.display = 'block';
+            document.getElementById('val-content').style.display = 'none';
+        } else {
+            const d = JSON.parse(rawData);
+            generateValidation(d);
+        }
+
+        function generateValidation(d) {
+            // Training distribution stats (approximate from Framingham dataset)
+            const stats = {
+                age: { min: 32, max: 70, mean: 49, std: 8.6, unit: 'yrs' },
+                totChol: { min: 107, max: 600, mean: 237, std: 44.7, unit: 'mg/dL' },
+                BMI: { min: 15, max: 57, mean: 25.8, std: 4.1, unit: 'kg/m²' },
+                heartRate: { min: 44, max: 143, mean: 75, std: 12.0, unit: 'bpm' },
+                glucose: { min: 40, max: 394, mean: 82, std: 24, unit: 'mg/dL' },
+                pulse_pressure: { min: 12, max: 130, mean: 48, std: 14.2, unit: 'mmHg' },
+                cigsPerDay: { min: 0, max: 70, mean: 9, std: 11.9, unit: 'cigs' }
+            };
+
+            const fields = [
+                { id: 'age', label: 'Age', normal: [32, 70] },
+                { id: 'totChol', label: 'Total Cholesterol', normal: [150, 240] },
+                { id: 'BMI', label: 'BMI', normal: [18.5, 30] },
+                { id: 'heartRate', label: 'Heart Rate', normal: [60, 100] },
+                { id: 'glucose', label: 'Fasting Glucose', normal: [70, 126] },
+                { id: 'pulse_pressure', label: 'Pulse Pressure', normal: [35, 65] },
+                { id: 'cigsPerDay', label: 'Cigarettes/Day', normal: [0, 20] },
+            ];
+
+            // COMPUTE STATUS FOR EACH FIELD
+            const validations = fields.map(f => {
+                const val = d[f.id] ?? null;
+                const missing = val === null || val === undefined;
+                const st = stats[f.id];
+                let status = 'ok', note = '';
+                if (missing) { status = 'error'; note = 'Missing value'; }
+                else if (val < f.normal[0] || val > f.normal[1]) {
+                    status = 'warn';
+                    const pct = computePercentile(val, st);
+                    note = pct > 85 ? `Top ${100 - pct}% of training distribution`
+                        : pct < 15 ? `Bottom ${pct}% of training distribution`
+                            : 'Outside normal clinical range';
+                } else {
+                    const pct = computePercentile(val, st);
+                    note = `Within normal range (${pct}th percentile)`;
+                }
+                return { ...f, val, status, note, stats: st };
+            });
+
+            const errors = validations.filter(v => v.status === 'error').length;
+            const warns = validations.filter(v => v.status === 'warn').length;
+            const allOk = errors === 0 && warns === 0;
+
+            // OVERALL STATUS BAR
+            let overallClass, overallIcon, overallText;
+            if (errors > 0) { overallClass = 'error'; overallIcon = '❌'; overallText = `${errors} missing value${errors > 1 ? 's' : ''} detected — please return to assessment`; }
+            else if (warns > 0) { overallClass = 'warn'; overallIcon = '⚠️'; overallText = `${warns} outlier${warns > 1 ? 's' : ''} detected — values are extreme but processing will continue`; }
+            else { overallClass = 'ok'; overallIcon = '✅'; overallText = 'All inputs validated — no missing values or critical outliers detected'; }
+
+            let html = `
+    <div class="status-bar ${overallClass}">
+      <span class="status-icon">${overallIcon}</span>
+      <span class="status-text">${overallText}</span>
+    </div>
+    <div class="val-grid">
+      <!-- MISSING VALUE CHECK -->
+      <div class="val-card">
+        <div class="val-card-header">
+          <div class="val-card-icon" style="background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.25)">🔍</div>
+          <div><div class="val-card-title">Missing Value Check</div></div>
+        </div>
+        <div class="val-card-body">
+          ${validations.map(v => `
+            <div class="val-item">
+              <span class="val-item-name">${v.label}</span>
+              <span class="val-item-value">${v.val !== null ? v.val : '—'}</span>
+              <span class="val-item-status ${v.status === 'ok' ? 's-ok' : v.status === 'warn' ? 's-warn' : 's-err'}">${v.status === 'ok' ? 'OK' : v.status === 'warn' ? 'OUTLIER' : 'MISSING'}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- DATA QUALITY CHECK -->
+      <div class="val-card">
+        <div class="val-card-header">
+          <div class="val-card-icon" style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25)">📋</div>
+          <div><div class="val-card-title">Clinical Bounds Check</div></div>
+        </div>
+        <div class="val-card-body">
+          ${validations.map(v => `
+            <div class="val-item">
+              <span class="val-item-name">${v.label}</span>
+              <span class="val-item-value" style="font-size:.72rem;color:var(--muted)">${v.val !== null ? v.note : 'No data'}</span>
+              <span class="val-item-status ${v.status === 'ok' ? 's-ok' : v.status === 'warn' ? 's-warn' : 's-err'}">${v.status.toUpperCase()}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- DISTRIBUTION VISUALIZATION -->
+    <div class="dist-section">
+      <div class="dist-title">Feature Normalization Preview — Training Distribution Position</div>
+      <div class="dist-items">
+        ${validations.filter(v => v.val !== null).map(v => {
+                const st = v.stats;
+                const range = st.max - st.min;
+                const posPct = Math.max(2, Math.min(96, ((v.val - st.min) / range) * 100));
+                const fillColor = v.status === 'ok' ? '#3b82f6' : v.status === 'warn' ? '#f59e0b' : '#ef4444';
+                const pct = computePercentile(v.val, st);
+                return `
+          <div class="dist-item">
+            <div class="dist-item-header">
+              <span class="dist-item-name">${v.label}</span>
+              <span class="dist-item-pct">${v.val} ${st.unit} · ${pct}th percentile vs training data</span>
+            </div>
+            <div class="dist-bar-bg">
+              <div class="dist-bar-fill" style="width:${posPct}%;background:${fillColor}"></div>
+              <div class="dist-marker" style="left:${posPct}%"></div>
+            </div>
+            <div class="dist-labels"><span>Min: ${st.min}</span><span>Mean: ${st.mean}</span><span>Max: ${st.max}</span></div>
+            ${pct > 85 ? `<div class="dist-insight">📊 Your ${v.label} is in the top ${100 - pct}% of the training distribution — flagged for review.</div>` : ''}
+            ${pct < 15 ? `<div class="dist-insight">📊 Your ${v.label} is in the bottom ${pct}% of the training distribution — flagged for review.</div>` : ''}
+          </div>`;
+            }).join('')}
+      </div>
+    </div>
+
+    <!-- PROCEED -->
+    <div class="proceed-card">
+      <h3 style="margin-bottom:8px;font-size:1.1rem">Validation ${errors > 0 ? 'Failed' : 'Complete'}</h3>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:24px">
+        ${errors > 0 ? 'Please fix missing values before proceeding to AI analysis.' :
+                    warns > 0 ? 'Outliers detected but will be processed. The model was trained on similar extreme values.' :
+                        'All inputs are within expected clinical ranges. Ready for AI prediction.'}
+      </p>
+      <div>
+        ${errors === 0 ? `<a href="processing.html" class="btn-proceed">Proceed to AI Processing →</a>` : ''}
+        <a href="assess.html" class="btn-back">← Edit Inputs</a>
+      </div>
+      <p class="proceed-note">Your data remains in local browser storage only.</p>
+    </div>
+  `;
+
+            document.getElementById('val-content').innerHTML = html;
+        }
+
+        function computePercentile(val, stats) {
+            // Approximate percentile using Z-score → error function
+            const z = (val - stats.mean) / stats.std;
+            const t = 1 / (1 + 0.2315419 * Math.abs(z));
+            const d = 0.3989422 * Math.exp(-z * z / 2);
+            const p = 1 - d * t * (0.3193815 + t * (-0.3565638 + t * (1.7814779 + t * (-1.8212560 + t * 1.3302744))));
+            const pct = z >= 0 ? p : 1 - p;
+            return Math.round(pct * 100);
+        }
+    </script>
+</body>
+
+</html>

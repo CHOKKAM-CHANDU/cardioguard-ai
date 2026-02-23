@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI – Feature Meaning</title>
+    <meta name="description"
+        content="Feature-level clinical insights converting ML output to medical meaning with contribution magnitude and clinical context." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .1;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 500px;
+            height: 500px;
+            background: #06b6d4;
+            top: -150px;
+            right: -100px
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #3b82f6;
+            bottom: -100px;
+            left: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(6, 11, 24, .85);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .nav-logo-icon svg {
+            width: 16px;
+            height: 16px
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            border-radius: 7px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 500;
+            transition: all .2s
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--surface2);
+            color: var(--text)
+        }
+
+        .nav-link.active {
+            color: #67e8f9
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 36px 24px 80px
+        }
+
+        .grad-text {
+            background: linear-gradient(135deg, #06b6d4, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        .page-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(6, 182, 212, .1);
+            border: 1px solid rgba(6, 182, 212, .3);
+            color: #67e8f9;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-bottom: 14px
+        }
+
+        h1 {
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 8px
+        }
+
+        .page-desc {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-bottom: 32px
+        }
+
+        /* FILTER BAR */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 28px
+        }
+
+        .filter-btn {
+            padding: 7px 18px;
+            border-radius: 999px;
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .filter-btn.active {
+            background: rgba(6, 182, 212, .1);
+            border-color: rgba(6, 182, 212, .4);
+            color: #67e8f9
+        }
+
+        .filter-btn:hover:not(.active) {
+            border-color: #2d4470;
+            color: #94a3b8
+        }
+
+        /* FACTOR CARDS GRID */
+        .factors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px
+        }
+
+        .factor-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: all .3s;
+            position: relative
+        }
+
+        .factor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, .3)
+        }
+
+        .factor-card-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            border-radius: 2px 2px 0 0
+        }
+
+        .fc-header {
+            padding: 22px 22px 16px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px
+        }
+
+        .fc-name {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 4px
+        }
+
+        .fc-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 800;
+            line-height: 1
+        }
+
+        .fc-unit {
+            font-size: .7rem;
+            color: var(--muted);
+            font-weight: 400;
+            margin-left: 4px
+        }
+
+        .fc-contrib {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px
+        }
+
+        .contrib-badge {
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            white-space: nowrap
+        }
+
+        .cb-strong-pos {
+            background: rgba(239, 68, 68, .15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, .3)
+        }
+
+        .cb-mod-pos {
+            background: rgba(245, 158, 11, .15);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, .3)
+        }
+
+        .cb-neutral {
+            background: rgba(148, 163, 184, .1);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, .2)
+        }
+
+        .cb-mod-neg {
+            background: rgba(96, 165, 250, .15);
+            color: #93c5fd;
+            border: 1px solid rgba(96, 165, 250, .3)
+        }
+
+        .cb-strong-neg {
+            background: rgba(16, 185, 129, .15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, .3)
+        }
+
+        .contrib-dir {
+            font-size: .75rem;
+            font-weight: 600
+        }
+
+        .dir-up {
+            color: #ef4444
+        }
+
+        .dir-down {
+            color: #10b981
+        }
+
+        .dir-neutral {
+            color: #94a3b8
+        }
+
+        /* MAGNITUDE BAR */
+        .fc-mag {
+            padding: 0 22px 16px
+        }
+
+        .mag-label {
+            font-size: .68rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 6px
+        }
+
+        .mag-bar-bg {
+            height: 6px;
+            background: var(--surface2);
+            border-radius: 999px;
+            overflow: hidden
+        }
+
+        .mag-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 1.2s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        /* MEDICAL MEANING */
+        .fc-meaning {
+            padding: 16px 22px;
+            border-top: 1px solid var(--border);
+            background: rgba(255, 255, 255, .015)
+        }
+
+        .meaning-label {
+            font-size: .65rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 8px
+        }
+
+        .meaning-text {
+            font-size: .78rem;
+            color: #94a3b8;
+            line-height: 1.6
+        }
+
+        .meaning-mechanism {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: var(--surface2);
+            border-radius: 7px
+        }
+
+        .mech-icon {
+            font-size: .9rem;
+            flex-shrink: 0;
+            margin-top: 1px
+        }
+
+        .mech-text {
+            font-size: .72rem;
+            color: #cbd5e1;
+            line-height: 1.5
+        }
+
+        /* STATUS CHIPS */
+        .fc-footer {
+            padding: 12px 22px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .status-chip {
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: .65rem;
+            font-weight: 600;
+            border: 1px solid
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border-radius: 9px;
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: all .2s
+        }
+
+        .btn-nav:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        .btn-next {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            color: #fff;
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 700;
+            transition: all .2s
+        }
+
+        .btn-next:hover {
+            transform: translateY(-1px)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-wrap">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+    </div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg></div>
+                CardioGuard AI
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="alerts.html" class="nav-link">Alerts</a>
+                <a href="explain.html" class="nav-link">XAI</a>
+                <a href="factors.html" class="nav-link active">Factors</a>
+                <a href="action.html" class="nav-link">Action</a>
+                <a href="simulate.html" class="nav-link">Simulate</a>
+                <a href="report.html" class="nav-link">Report</a>
+            </div>
+        </div>
+    </nav>
+    <div class="page-wrap">
+        <div class="page-tag">Feature Intelligence · Clinical Meaning</div>
+        <h1>Factor <span class="grad-text">Clinical Meaning</span></h1>
+        <p class="page-desc">Each biomarker is explained with its current value, contribution magnitude, direction, and
+            pathophysiological mechanism — converting ML output to actionable clinical insight.</p>
+
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="filterFactors('all',this)">All Factors</button>
+            <button class="filter-btn" onclick="filterFactors('risk-increasing',this)">↑ Risk-Increasing</button>
+            <button class="filter-btn" onclick="filterFactors('risk-decreasing',this)">↓ Protective</button>
+            <button class="filter-btn" onclick="filterFactors('high-magnitude',this)">⚡ High Magnitude</button>
+            <button class="filter-btn" onclick="filterFactors('lifestyle',this)">🏃 Modifiable</button>
+        </div>
+
+        <div class="factors-grid" id="factors-grid">
+            <!-- Generated dynamically -->
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:32px">
+            <a href="explain.html" class="btn-nav">← XAI</a>
+            <a href="action.html" class="btn-next">Action Plan →</a>
+        </div>
+    </div>
+
+    <script>
+        const DATA_KEY = 'cg_payload';
+        const RES_KEY = 'cg_result';
+        const payload = JSON.parse(localStorage.getItem(DATA_KEY) || 'null');
+        const result = JSON.parse(localStorage.getItem(RES_KEY) || 'null');
+
+        const FACTORS = [
+            {
+                id: 'totChol', label: 'Total Cholesterol', unit: 'mg/dL', emoji: '🧪',
+                system: 'Cardiovascular', category: 'lifestyle', modifiable: true,
+                threshold: { normal: 200, high: 240 }, direction: 'high-is-bad',
+                mechanism: 'High LDL cholesterol deposits on arterial walls forming atherosclerotic plaques. This narrows the lumen and reduces blood flow, increasing risk of ischemia and myocardial infarction.',
+                intervention: 'Adopt a Mediterranean diet, reduce saturated fats, increase soluble fiber, and consider statin therapy if >240 mg/dL.',
+                refRange: 'Optimal: <170 | Borderline: 170–199 | High: 200–239 | Very High: ≥240 mg/dL'
+            },
+            {
+                id: 'pulse_pressure', label: 'Pulse Pressure', unit: 'mmHg', emoji: '💓',
+                system: 'Vascular', category: 'clinical', modifiable: true,
+                threshold: { normal: 40, high: 60 }, direction: 'high-is-bad',
+                mechanism: 'Pulse pressure (SBP - DBP) reflects arterial stiffness. High values indicate reduced aortic elasticity, forcing the heart to generate greater pressure and increasing myocardial oxygen demand.',
+                intervention: 'Reduce sodium intake (<2g/day), DASH diet, regular cardio exercise, and optimize antihypertensive regimen.',
+                refRange: 'Normal: 40–60 mmHg | Elevated: >60 mmHg | Critical: >80 mmHg'
+            },
+            {
+                id: 'glucose', label: 'Fasting Glucose', unit: 'mg/dL', emoji: '🩸',
+                system: 'Metabolic', category: 'lifestyle', modifiable: true,
+                threshold: { normal: 100, high: 126 }, direction: 'high-is-bad',
+                mechanism: 'Chronic hyperglycemia causes advanced glycation end-products (AGEs) that stiffen blood vessels, promote inflammation, and accelerate atherosclerosis. Diabetic patients have 2–4x increased CHD risk.',
+                intervention: 'Low-glycemic index diet, regular aerobic exercise (150 min/week), HbA1c monitoring, and metformin therapy if indicated.',
+                refRange: 'Normal: 70–99 | Pre-diabetes: 100–125 | Diabetes: ≥126 mg/dL'
+            },
+            {
+                id: 'BMI', label: 'Body Mass Index', unit: 'kg/m²', emoji: '⚖️',
+                system: 'Metabolic', category: 'lifestyle', modifiable: true,
+                threshold: { normal: 25, high: 30 }, direction: 'high-is-bad',
+                mechanism: 'Obesity increases cardiac workload through increased preload, promotes insulin resistance, hypertension, and dyslipidemia — a metabolic syndrome nexus that dramatically amplifies CHD risk.',
+                intervention: 'Target 5–10% weight reduction through caloric deficit of 500–750 kcal/day. Combine with resistance training and aerobic exercise.',
+                refRange: 'Underweight: <18.5 | Normal: 18.5–24.9 | Overweight: 25–29.9 | Obese: ≥30 kg/m²'
+            },
+            {
+                id: 'heartRate', label: 'Resting Heart Rate', unit: 'bpm', emoji: '❤️',
+                system: 'Cardiac', category: 'lifestyle', modifiable: true,
+                threshold: { normal: 75, high: 90 }, direction: 'high-is-bad',
+                mechanism: 'Elevated resting heart rate (>80 bpm) reflects reduced cardiac vagal tone and autonomic imbalance. Chronically elevated HR increases myocardial oxygen demand and is an independent predictor of cardiovascular mortality.',
+                intervention: 'Regular aerobic exercise (jogging, swimming) reduces resting HR. Stress management and beta-blocker therapy if HR chronically elevated.',
+                refRange: 'Athletic: 40–60 | Normal: 60–80 | Elevated: 81–100 | Tachycardia: >100 bpm'
+            },
+            {
+                id: 'cigsPerDay', label: 'Cigarettes / Day', unit: 'cigarettes', emoji: '🚬',
+                system: 'Lifestyle', category: 'lifestyle', modifiable: true,
+                threshold: { normal: 0, high: 1 }, direction: 'high-is-bad',
+                mechanism: 'Nicotine causes vasoconstriction and increases heart rate. Carbon monoxide reduces oxygen delivery. Together they damage endothelium, reduce HDL, increase platelet aggregation, and dramatically accelerate atherosclerosis.',
+                intervention: 'Smoking cessation is the single most impactful CHD risk reduction intervention. NRT, varenicline, or bupropion combined with behavioral therapy.',
+                refRange: 'None (0) is the only safe level. Any smoking significantly increases CHD risk.'
+            },
+            {
+                id: 'age', label: 'Patient Age', unit: 'years', emoji: '📅',
+                system: 'Demographic', category: 'demographic', modifiable: false,
+                threshold: { normal: 45, high: 60 }, direction: 'high-is-bad',
+                mechanism: 'Aging causes progressive arterial stiffening, endothelial dysfunction, increased inflammatory burden, and reduced cardiac reserve. Risk increases exponentially after age 45 in men and 55 in women.',
+                intervention: 'Age is non-modifiable, but aggressive management of all other factors becomes increasingly important with age.',
+                refRange: 'Low risk: <45 | Moderate risk: 45–59 | High risk: ≥60 years'
+            },
+            {
+                id: 'prevalentHyp', label: 'Hypertension', unit: 'status', emoji: '🩺',
+                system: 'Cardiovascular', category: 'clinical', modifiable: true,
+                threshold: { normal: 0, high: 1 }, direction: 'high-is-bad',
+                mechanism: 'Hypertension forces the left ventricle to work against elevated afterload, causing ventricular hypertrophy. It also accelerates endothelial damage and atherosclerotic plaque formation throughout coronary arteries.',
+                intervention: 'ACE inhibitors or ARBs as first-line therapy. DASH diet, exercise, and sodium restriction. Target BP <130/80 mmHg.',
+                refRange: 'Controlled: <130/80 mmHg | Stage 1: 130–139/80–89 | Stage 2: ≥140/90 mmHg'
+            },
+            {
+                id: 'diabetes', label: 'Diabetes', unit: 'status', emoji: '💉',
+                system: 'Metabolic', category: 'clinical', modifiable: true,
+                threshold: { normal: 0, high: 1 }, direction: 'high-is-bad',
+                mechanism: 'Diabetes doubles CHD risk through multiple mechanisms: advanced glycation, oxidative stress, dyslipidemia (high TG, low HDL), and increased platelet aggregation — creating a pro-thrombotic state.',
+                intervention: 'Strict glycemic control (HbA1c <7%), GLP-1 agonists or SGLT-2 inhibitors (proven CV benefit), statin therapy, and regular cardiac screening.',
+                refRange: 'Absent: No | Present: Yes (2–4x amplification of baseline CHD risk)'
+            },
+        ];
+
+        function getContribMagnitude(factor, val) {
+            if (!val && val !== 0) return 0;
+            if (factor.id === 'prevalentHyp' || factor.id === 'diabetes' || factor.id === 'prevalentStroke') return val === 1 ? 0.85 : 0.05;
+            if (factor.id === 'cigsPerDay') return Math.min(1, val / 20);
+            if (factor.id === 'totChol') return Math.min(1, Math.max(0, (val - 150) / 200));
+            if (factor.id === 'pulse_pressure') return Math.min(1, Math.max(0, (val - 35) / 65));
+            if (factor.id === 'glucose') return Math.min(1, Math.max(0, (val - 70) / 200));
+            if (factor.id === 'BMI') return Math.min(1, Math.max(0, (val - 15) / 30));
+            if (factor.id === 'heartRate') return Math.min(1, Math.max(0, (val - 50) / 80));
+            if (factor.id === 'age') return Math.min(1, Math.max(0, (val - 30) / 50));
+            return 0.5;
+        }
+
+        function getContribLabel(mag, isRisk) {
+            if (isRisk) {
+                if (mag > 0.7) return { label: 'Strong ↑ Positive', cls: 'cb-strong-pos', dir: 'up' };
+                if (mag > 0.4) return { label: 'Moderate ↑ Risk', cls: 'cb-mod-pos', dir: 'up' };
+                return { label: 'Mild Positive', cls: 'cb-mod-pos', dir: 'up' };
+            } else {
+                if (mag < 0.2) return { label: 'Strong ↓ Protective', cls: 'cb-strong-neg', dir: 'down' };
+                if (mag < 0.4) return { label: 'Moderate ↓ Protective', cls: 'cb-mod-neg', dir: 'down' };
+                return { label: 'Neutral', cls: 'cb-neutral', dir: 'neutral' };
+            }
+        }
+
+        function renderFactors(filterFn) {
+            if (!payload) {
+                document.getElementById('factors-grid').innerHTML = '<p style="color:var(--muted);grid-column:1/-1">No data. <a href="assess.html" style="color:#3b82f6">Complete assessment</a></p>';
+                return;
+            }
+            const visible = FACTORS.filter(filterFn);
+            if (visible.length === 0) {
+                document.getElementById('factors-grid').innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:20px">No factors match this filter.</p>';
+                return;
+            }
+            const html = visible.map((f, idx) => {
+                const val = payload[f.id] ?? null;
+                const isBinary = f.id === 'prevalentHyp' || f.id === 'diabetes' || f.id === 'prevalentStroke' || f.id === 'BPMeds';
+                const mag = getContribMagnitude(f, val);
+                const isRisk = isBinary ? val === 1 : val > f.threshold.high;
+                const contrib = getContribLabel(mag, isRisk);
+                const glowColor = isRisk ? '#ef444466' : mag < 0.3 ? '#10b98166' : '#f59e0b66';
+                const barColor = isRisk ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : mag < 0.3 ? 'linear-gradient(90deg,#10b981,#06b6d4)' : 'linear-gradient(90deg,#3b82f6,#8b5cf6)';
+                const displayVal = isBinary ? (val === 1 ? 'Yes' : 'No') : (val !== null ? val : '—');
+
+                return `
+    <div class="factor-card" data-category="${f.category}" data-direction="${isRisk ? 'risk-increasing' : 'risk-decreasing'}" data-magnitude="${mag.toFixed(2)}" data-modifiable="${f.modifiable}" style="animation:slideUp .4s ease ${idx * 0.05}s both">
+      <div class="factor-card-glow" style="background:${glowColor}"></div>
+      <div class="fc-header">
+        <div>
+          <div class="fc-name">${f.emoji} ${f.label}</div>
+          <div>
+            <span class="fc-value" style="color:${isRisk ? '#fca5a5' : mag < 0.3 ? '#6ee7b7' : '#60a5fa'}">${displayVal}</span>
+            ${!isBinary ? `<span class="fc-unit">${f.unit}</span>` : ''}
+          </div>
+        </div>
+        <div class="fc-contrib">
+          <span class="contrib-badge ${contrib.cls}">${contrib.label}</span>
+          <span class="contrib-dir ${contrib.dir === 'up' ? 'dir-up' : contrib.dir === 'down' ? 'dir-down' : 'dir-neutral'}">
+            ${contrib.dir === 'up' ? '↑ Increases Risk' : contrib.dir === 'down' ? '↓ Reduces Risk' : '→ Neutral Effect'}
+          </span>
+        </div>
+      </div>
+      <div class="fc-mag">
+        <div class="mag-label">Contribution Magnitude</div>
+        <div class="mag-bar-bg"><div class="mag-bar-fill" style="width:${mag * 100}%;background:${barColor}"></div></div>
+      </div>
+      <div class="fc-meaning">
+        <div class="meaning-label">Medical Meaning</div>
+        <div class="meaning-text">${f.mechanism}</div>
+        <div class="meaning-mechanism">
+          <span class="mech-icon">💊</span>
+          <span class="mech-text">${f.intervention}</span>
+        </div>
+      </div>
+      <div class="fc-footer">
+        <span class="status-chip" style="background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.3);color:#67e8f9">${f.system}</span>
+        ${f.modifiable ? `<span class="status-chip" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:#6ee7b7">✓ Modifiable</span>` : `<span class="status-chip" style="background:rgba(148,163,184,.1);border-color:rgba(148,163,184,.3);color:#94a3b8">Fixed</span>`}
+        <span class="status-chip" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#93c5fd;font-size:.6rem">${f.refRange.split('|')[0].trim()}</span>
+      </div>
+    </div>`;
+            }).join('');
+            document.getElementById('factors-grid').innerHTML = html;
+        }
+
+        function filterFactors(type, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            const filters = {
+                'all': () => true,
+                'risk-increasing': (f) => { const val = payload?.[f.id]; const isBin = f.id === 'prevalentHyp' || f.id === 'diabetes'; return isBin ? val === 1 : val > f.threshold.high; },
+                'risk-decreasing': (f) => { const val = payload?.[f.id]; const isBin = f.id === 'prevalentHyp' || f.id === 'diabetes'; return isBin ? val === 0 : val <= f.threshold.normal; },
+                'high-magnitude': (f) => { const val = payload?.[f.id]; return getContribMagnitude(f, val) > 0.5; },
+                'lifestyle': (f) => f.modifiable,
+            };
+            renderFactors(filters[type] || filters['all']);
+        }
+
+        renderFactors(() => true);
+    </script>
+    <style>
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+    </style>
+</body>
+
+</html>

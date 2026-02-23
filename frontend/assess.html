@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI – Patient Assessment Workspace</title>
+    <meta name="description"
+        content="Enter patient biomarkers across demographics, clinical measurements, and lifestyle indicators for AI-powered CHD risk assessment." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, .35);
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px;
+            --risk-low: rgba(16, 185, 129, .12);
+            --risk-med: rgba(245, 158, 11, .12);
+            --risk-high: rgba(239, 68, 68, .12);
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .1;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 600px;
+            height: 600px;
+            background: #3b82f6;
+            top: -200px;
+            left: -150px
+        }
+
+        .b2 {
+            width: 450px;
+            height: 450px;
+            background: #8b5cf6;
+            bottom: -100px;
+            right: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        /* NAV */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(6, 11, 24, .85);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .nav-logo-icon svg {
+            width: 16px;
+            height: 16px
+        }
+
+        .nav-back {
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: .8rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all .2s
+        }
+
+        .nav-back:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        /* PAGE HEADER */
+        .page-header {
+            padding: 40px 0 20px
+        }
+
+        .page-header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .ph-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, .1);
+            border: 1px solid rgba(59, 130, 246, .3);
+            color: #93c5fd;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-bottom: 14px
+        }
+
+        .ph-tag-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #3b82f6;
+            animation: blink 1.5s ease-in-out infinite
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .3
+            }
+        }
+
+        h1.ph-title {
+            font-size: clamp(1.6rem, 3vw, 2.4rem);
+            font-weight: 800;
+            margin-bottom: 8px
+        }
+
+        .grad-text {
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        .ph-desc {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-bottom: 24px
+        }
+
+        /* MODEL READINESS BAR */
+        .readiness-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 32px;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 24px;
+            padding-right: 24px
+        }
+
+        .readiness-label {
+            font-size: .78rem;
+            font-weight: 600;
+            color: #94a3b8;
+            white-space: nowrap
+        }
+
+        .readiness-bar-bg {
+            flex: 1;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--surface3)
+        }
+
+        .readiness-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transition: width .5s cubic-bezier(.4, 0, .2, 1);
+            width: 0%
+        }
+
+        .readiness-pct {
+            font-size: .85rem;
+            font-weight: 700;
+            color: #60a5fa;
+            white-space: nowrap;
+            font-family: 'JetBrains Mono', monospace;
+            min-width: 40px;
+            text-align: right
+        }
+
+        /* MAIN LAYOUT */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px 80px
+        }
+
+        /* ZONES */
+        .zone {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: border-color .3s
+        }
+
+        .zone:hover {
+            border-color: #2d4470
+        }
+
+        .zone-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 14px
+        }
+
+        .zone-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0
+        }
+
+        .zone-title {
+            font-size: 1rem;
+            font-weight: 700
+        }
+
+        .zone-sub {
+            font-size: .78rem;
+            color: var(--muted);
+            margin-top: 2px
+        }
+
+        .zone-body {
+            padding: 24px 28px
+        }
+
+        /* INPUT GRID */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative
+        }
+
+        .field-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        label {
+            font-size: .78rem;
+            font-weight: 600;
+            color: #94a3b8;
+            letter-spacing: .03em;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .unit {
+            font-size: .68rem;
+            color: var(--muted);
+            font-weight: 400
+        }
+
+        .risk-badge {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: .62rem;
+            font-weight: 700;
+            letter-spacing: .04em
+        }
+
+        .risk-low {
+            background: rgba(16, 185, 129, .12);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, .3)
+        }
+
+        .risk-med {
+            background: rgba(245, 158, 11, .12);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, .3)
+        }
+
+        .risk-high {
+            background: rgba(239, 68, 68, .12);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, .3)
+        }
+
+        .tooltip-btn {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--surface3);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: .62rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s;
+            flex-shrink: 0;
+            position: relative
+        }
+
+        .tooltip-btn:hover {
+            background: rgba(59, 130, 246, .15);
+            border-color: var(--accent);
+            color: #93c5fd
+        }
+
+        .tooltip-popup {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: -80px;
+            width: 220px;
+            background: #1a2744;
+            border: 1px solid #2d4470;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: .75rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            z-index: 50;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .5)
+        }
+
+        .tooltip-popup::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 90px;
+            border: 6px solid transparent;
+            border-top-color: #2d4470
+        }
+
+        .tooltip-btn:hover .tooltip-popup,
+        .field:focus-within .tooltip-popup {
+            display: block
+        }
+
+        input[type="number"],
+        select {
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: .9rem;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            transition: all .25s;
+            outline: none;
+            -moz-appearance: textfield;
+            appearance: textfield
+        }
+
+        input::-webkit-inner-spin-button {
+            opacity: 0
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+            background: var(--surface3)
+        }
+
+        select option {
+            background: #1a2236
+        }
+
+        .input-hint {
+            font-size: .68rem;
+            color: var(--muted);
+            margin-top: 2px
+        }
+
+        .input-valid {
+            border-color: rgba(16, 185, 129, .5) !important
+        }
+
+        .input-warn {
+            border-color: rgba(245, 158, 11, .5) !important
+        }
+
+        /* TOGGLE */
+        .toggle-group {
+            display: flex;
+            gap: 6px
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 11px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: .82rem;
+            font-weight: 600;
+            border: 1.5px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            transition: all .2s
+        }
+
+        .toggle-btn.active {
+            background: rgba(59, 130, 246, .15);
+            border-color: var(--accent);
+            color: var(--text);
+            box-shadow: 0 0 12px rgba(59, 130, 246, .2)
+        }
+
+        .toggle-btn:hover:not(.active) {
+            border-color: #2d4470;
+            color: #94a3b8
+        }
+
+        /* SUBMIT */
+        .submit-zone {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            text-align: center
+        }
+
+        .btn-predict {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 48px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .3s;
+            box-shadow: 0 4px 30px var(--accent-glow)
+        }
+
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px var(--accent-glow)
+        }
+
+        .btn-predict:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-top-color: #fff;
+            animation: spin .7s linear infinite;
+            display: none
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .submit-note {
+            margin-top: 12px;
+            font-size: .78rem;
+            color: var(--muted)
+        }
+
+        /* TOAST */
+        #toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1b2e;
+            border: 1px solid var(--danger);
+            color: #fca5a5;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: .85rem;
+            display: none;
+            z-index: 999;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, .5)
+        }
+
+        @media(max-width:600px) {
+            .input-grid {
+                grid-template-columns: 1fr
+            }
+
+            .nav-links {
+                display: none
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-wrap">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+    </div>
+
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg></div>
+                CardioGuard AI
+            </a>
+            <a href="index.html" class="nav-back">← Home</a>
+        </div>
+    </nav>
+
+    <div style="position:relative;z-index:1">
+        <div class="page-header">
+            <div class="page-header-inner">
+                <div class="ph-tag"><span class="ph-tag-dot"></span>Step 1 of 5 · Data Acquisition</div>
+                <h1 class="ph-title">Patient <span class="grad-text">Assessment Workspace</span></h1>
+                <p class="ph-desc">Enter clinical biomarkers across three zones. Each field includes risk relevance and
+                    clinical context tooltips.</p>
+            </div>
+        </div>
+
+        <!-- READINESS BAR -->
+        <div class="readiness-wrap">
+            <span class="readiness-label">🧠 Model Readiness</span>
+            <div class="readiness-bar-bg">
+                <div class="readiness-bar-fill" id="readiness-fill"></div>
+            </div>
+            <span class="readiness-pct" id="readiness-pct">0%</span>
+        </div>
+
+        <form id="assess-form" novalidate>
+            <div class="main-grid">
+
+                <!-- ZONE 1: DEMOGRAPHICS -->
+                <div class="zone">
+                    <div class="zone-header">
+                        <div class="zone-icon"
+                            style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25)">👤</div>
+                        <div>
+                            <div class="zone-title">Zone 1 — Demographics</div>
+                            <div class="zone-sub">Age, sex, and socioeconomic indicators</div>
+                        </div>
+                    </div>
+                    <div class="zone-body">
+                        <div class="input-grid">
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label for="age">Age <span class="unit">years</span>
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Age is one of the strongest
+                                                CHD predictors. Risk increases significantly after 45 in men and 55 in
+                                                women.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <input type="number" id="age" min="20" max="90" placeholder="e.g. 45" required />
+                                <span class="input-hint">Range: 20–90 years</span>
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label>Sex
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Males have higher CHD risk
+                                                overall; females see risk rise sharply post-menopause.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-med">MED Relevance</span>
+                                </div>
+                                <div class="toggle-group">
+                                    <button type="button" class="toggle-btn active" data-field="sex"
+                                        data-val="0">Female</button>
+                                    <button type="button" class="toggle-btn" data-field="sex" data-val="1">Male</button>
+                                </div>
+                                <input type="hidden" id="sex" value="0" />
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label for="education">Education Level
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Education correlates with
+                                                health literacy and preventive care access, serving as a socioeconomic
+                                                risk proxy.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-low">LOW Relevance</span>
+                                </div>
+                                <select id="education">
+                                    <option value="1">1 – Some High School</option>
+                                    <option value="2">2 – High School / GED</option>
+                                    <option value="3">3 – Some College</option>
+                                    <option value="4" selected>4 – College Degree+</option>
+                                </select>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ZONE 2: CLINICAL METRICS -->
+                <div class="zone">
+                    <div class="zone-header">
+                        <div class="zone-icon"
+                            style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25)">🩺</div>
+                        <div>
+                            <div class="zone-title">Zone 2 — Clinical Metrics</div>
+                            <div class="zone-sub">Biomarkers and physiological measurements</div>
+                        </div>
+                    </div>
+                    <div class="zone-body">
+                        <div class="input-grid">
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label for="totChol">Total Cholesterol <span class="unit">mg/dL</span>
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">High LDL cholesterol leads
+                                                to arterial plaque formation (atherosclerosis), narrowing blood vessels
+                                                and increasing CHD risk. Normal: &lt;200 mg/dL.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <input type="number" id="totChol" placeholder="e.g. 212" required />
+                                <span class="input-hint">Normal: &lt;200 | High: ≥240</span>
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label for="BMI">BMI <span class="unit">kg/m²</span>
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Obesity (BMI≥30) increases
+                                                cardiac workload and is linked to hypertension, diabetes, and
+                                                dyslipidemia — all CHD risk factors.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <input type="number" id="BMI" step="0.1" placeholder="e.g. 29.0" required />
+                                <span class="input-hint">Normal: 18.5–24.9 | Obese: ≥30</span>
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label for="heartRate">Heart Rate <span class="unit">bpm</span>
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Resting heart rate &gt;80
+                                                bpm indicates reduced cardiac efficiency. Chronically elevated HR
+                                                correlates with increased CHD mortality risk.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-med">MED Relevance</span>
+                                </div>
+                                <input type="number" id="heartRate" placeholder="e.g. 72" required />
+                                <span class="input-hint">Normal resting: 60–100 bpm</span>
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label for="glucose">Fasting Glucose <span class="unit">mg/dL</span>
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Hyperglycemia damages
+                                                endothelial cells, promotes inflammation, and accelerates
+                                                atherosclerosis. Pre-diabetes: 100–125; Diabetes: ≥126.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <input type="number" id="glucose" placeholder="e.g. 75" required />
+                                <span class="input-hint">Normal: 70–99 | Diabetes: ≥126</span>
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label for="pulse_pressure">Pulse Pressure <span class="unit">mmHg</span>
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Pulse pressure = Systolic
+                                                BP − Diastolic BP. High PP (&gt;60 mmHg) indicates arterial stiffness
+                                                and is a strong predictor of cardiac events.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <input type="number" id="pulse_pressure" placeholder="e.g. 60" required />
+                                <span class="input-hint">Normal: 40–60 | High: &gt;60</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ZONE 3: LIFESTYLE -->
+                <div class="zone">
+                    <div class="zone-header">
+                        <div class="zone-icon"
+                            style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25)">🏃</div>
+                        <div>
+                            <div class="zone-title">Zone 3 — Lifestyle Indicators & Medical History</div>
+                            <div class="zone-sub">Smoking, medications, and pre-existing conditions</div>
+                        </div>
+                    </div>
+                    <div class="zone-body">
+                        <div class="input-grid">
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label for="cigsPerDay">Cigarettes / Day
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Smoking is a major
+                                                modifiable CHD risk factor. Each cigarette damages endothelium, promotes
+                                                clot formation, and reduces HDL cholesterol.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <input type="number" id="cigsPerDay" min="0" placeholder="e.g. 0" required />
+                                <span class="input-hint">Enter 0 if non-smoker</span>
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label>BP Medication
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Antihypertensives reduce
+                                                vascular resistance. Being on BP meds suggests existing hypertension
+                                                management, which affects CHD risk trajectories.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-med">MED Relevance</span>
+                                </div>
+                                <div class="toggle-group">
+                                    <button type="button" class="toggle-btn active" data-field="BPMeds"
+                                        data-val="0">No</button>
+                                    <button type="button" class="toggle-btn" data-field="BPMeds"
+                                        data-val="1">Yes</button>
+                                </div>
+                                <input type="hidden" id="BPMeds" value="0" />
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label>Prevalent Stroke
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Prior stroke indicates
+                                                existing cerebrovascular disease, which shares risk factors with CHD and
+                                                dramatically increases future cardiac event probability.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <div class="toggle-group">
+                                    <button type="button" class="toggle-btn active" data-field="prevalentStroke"
+                                        data-val="0">No</button>
+                                    <button type="button" class="toggle-btn" data-field="prevalentStroke"
+                                        data-val="1">Yes</button>
+                                </div>
+                                <input type="hidden" id="prevalentStroke" value="0" />
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label>Hypertension
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">High blood pressure forces
+                                                the heart to work harder, causing arterial wall thickening and
+                                                stiffening — a primary driver of CHD risk.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <div class="toggle-group">
+                                    <button type="button" class="toggle-btn active" data-field="prevalentHyp"
+                                        data-val="0">No</button>
+                                    <button type="button" class="toggle-btn" data-field="prevalentHyp"
+                                        data-val="1">Yes</button>
+                                </div>
+                                <input type="hidden" id="prevalentHyp" value="0" />
+                            </div>
+
+                            <div class="field">
+                                <div class="field-label-row">
+                                    <label>Diabetes
+                                        <div class="tooltip-btn">?<div class="tooltip-popup">Diabetes doubles the risk
+                                                of CHD. Chronically elevated glucose damages blood vessels and nerves,
+                                                accelerating cardiovascular deterioration.</div>
+                                        </div>
+                                    </label>
+                                    <span class="risk-badge risk-high">HIGH Relevance</span>
+                                </div>
+                                <div class="toggle-group">
+                                    <button type="button" class="toggle-btn active" data-field="diabetes"
+                                        data-val="0">No</button>
+                                    <button type="button" class="toggle-btn" data-field="diabetes"
+                                        data-val="1">Yes</button>
+                                </div>
+                                <input type="hidden" id="diabetes" value="0" />
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBMIT -->
+                <div class="submit-zone">
+                    <button type="submit" class="btn-predict" id="predict-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="m9 18 6-6-6-6" />
+                        </svg>
+                        <span id="btn-text">Proceed to Validation →</span>
+                        <div class="spinner" id="spinner"></div>
+                    </button>
+                    <p class="submit-note">All 8 required fields must be completed before analysis. Your data is
+                        processed locally.</p>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        // DATA STORE
+        const DATA_KEY = 'cg_payload';
+
+        // TOGGLE BUTTONS
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const field = btn.dataset.field;
+                document.querySelectorAll(`[data-field="${field}"]`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(field).value = btn.dataset.val;
+                updateReadiness();
+            });
+        });
+
+        // READINESS BAR
+        const numFields = ['age', 'totChol', 'BMI', 'heartRate', 'glucose', 'pulse_pressure', 'cigsPerDay'];
+        const totalFields = numFields.length + 5; // +5 for toggles (always filled)
+
+        function updateReadiness() {
+            let filled = 5; // toggles always filled
+            numFields.forEach(id => {
+                const v = document.getElementById(id).value;
+                if (v && !isNaN(parseFloat(v))) filled++;
+            });
+            const pct = Math.round((filled / totalFields) * 100);
+            document.getElementById('readiness-fill').style.width = pct + '%';
+            document.getElementById('readiness-pct').textContent = pct + '%';
+        }
+
+        numFields.forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                updateReadiness();
+                // Live validation feedback
+                const el = document.getElementById(id);
+                const v = parseFloat(el.value);
+                if (!isNaN(v)) {
+                    el.classList.remove('input-warn');
+                    el.classList.add('input-valid');
+                } else {
+                    el.classList.add('input-warn');
+                    el.classList.remove('input-valid');
+                }
+            });
+        });
+
+        updateReadiness();
+
+        // FORM SUBMIT
+        document.getElementById('assess-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            for (const id of numFields) {
+                const el = document.getElementById(id);
+                if (!el.value || isNaN(parseFloat(el.value))) {
+                    showToast('⚠️ Please fill in: ' + id.replace('_', ' '));
+                    el.focus(); return;
+                }
+            }
+            const ppEl = document.getElementById('pulse_pressure');
+            const sysEl = document.getElementById('sysBP');
+            const diaEl = document.getElementById('diaBP');
+            const sysBPVal = sysEl ? parseFloat(sysEl.value) : null;
+            const diaBPVal = diaEl ? parseFloat(diaEl.value) : null;
+            // Auto-compute pulse pressure from sysBP-diaBP if both present
+            let ppVal = parseFloat(ppEl.value);
+            if (isNaN(ppVal) && sysBPVal && diaBPVal) ppVal = sysBPVal - diaBPVal;
+            const payload = {
+                age: parseFloat(document.getElementById('age').value),
+                sex: parseInt(document.getElementById('sex').value),
+                cigsPerDay: parseFloat(document.getElementById('cigsPerDay').value),
+                BPMeds: parseInt(document.getElementById('BPMeds').value),
+                prevalentStroke: parseInt(document.getElementById('prevalentStroke').value),
+                prevalentHyp: parseInt(document.getElementById('prevalentHyp').value),
+                diabetes: parseInt(document.getElementById('diabetes').value),
+                totChol: parseFloat(document.getElementById('totChol').value),
+                BMI: parseFloat(document.getElementById('BMI').value),
+                heartRate: parseFloat(document.getElementById('heartRate').value),
+                glucose: parseFloat(document.getElementById('glucose').value),
+                pulse_pressure: ppVal,
+                education: parseInt(document.getElementById('education').value),
+                sysBP: sysBPVal,
+                diaBP: diaBPVal,
+            };
+            localStorage.setItem(DATA_KEY, JSON.stringify(payload));
+            // Clear old result caches when re-assessing
+            localStorage.removeItem('cg_result');
+            localStorage.removeItem('cg_xai');
+            localStorage.removeItem('cg_cf');
+            localStorage.removeItem('cg_sim');
+            setLoading(true);
+            await new Promise(r => setTimeout(r, 400));
+            window.location.href = 'validate.html';
+        });
+
+        function setLoading(on) {
+            const btn = document.getElementById('predict-btn');
+            btn.disabled = on;
+            document.getElementById('spinner').style.display = on ? 'block' : 'none';
+            document.getElementById('btn-text').textContent = on ? 'Validating…' : 'Proceed to Validation →';
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 3500);
+        }
+    </script>
+</body>
+
+</html>

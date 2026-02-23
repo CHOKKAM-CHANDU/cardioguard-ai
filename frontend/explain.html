@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI – Explainability Center (SHAP + LIME)</title>
+    <meta name="description"
+        content="XAI explainability center with SHAP global reasoning and LIME local sensitivity analysis with human-readable explanations." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, .35);
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .1;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 550px;
+            height: 550px;
+            background: #8b5cf6;
+            top: -200px;
+            left: -100px
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #3b82f6;
+            bottom: -100px;
+            right: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(6, 11, 24, .85);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .nav-logo-icon svg {
+            width: 16px;
+            height: 16px
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            border-radius: 7px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 500;
+            transition: all .2s
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--surface2);
+            color: var(--text)
+        }
+
+        .nav-link.active {
+            color: #c4b5fd
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 36px 24px 80px
+        }
+
+        .grad-text {
+            background: linear-gradient(135deg, #c084fc, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        .page-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(139, 92, 246, .1);
+            border: 1px solid rgba(139, 92, 246, .3);
+            color: #c4b5fd;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-bottom: 14px
+        }
+
+        h1 {
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 8px
+        }
+
+        .page-desc {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-bottom: 32px
+        }
+
+        /* TABS */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            background: var(--surface2);
+            padding: 5px;
+            border-radius: 14px;
+            width: fit-content;
+            margin-bottom: 28px
+        }
+
+        .tab-btn {
+            padding: 10px 28px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: .85rem;
+            font-weight: 600;
+            background: transparent;
+            color: var(--muted);
+            transition: all .25s;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .tab-btn.active {
+            background: var(--surface3);
+            color: var(--text);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .3)
+        }
+
+        .tab-panel {
+            display: none;
+            animation: fadeIn .3s ease
+        }
+
+        .tab-panel.active {
+            display: block
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        /* INFO BOX */
+        .info-box {
+            padding: 14px 18px;
+            border-radius: 10px;
+            background: var(--surface2);
+            border-left: 3px solid var(--purple);
+            font-size: .82rem;
+            color: #94a3b8;
+            line-height: 1.7;
+            margin-bottom: 24px
+        }
+
+        .info-box strong {
+            color: #c4b5fd
+        }
+
+        /* XAI LAYOUT */
+        .xai-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px
+        }
+
+        .xai-main {}
+
+        .xai-side {}
+
+        .plot-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px
+        }
+
+        .plot-card-title {
+            font-size: .7rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .plot-card-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        .plot-img {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            display: block
+        }
+
+        .plot-note {
+            font-size: .75rem;
+            color: var(--muted);
+            margin-top: 10px;
+            line-height: 1.5
+        }
+
+        /* LEGEND */
+        .legend-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px
+        }
+
+        .legend-title {
+            font-size: .78rem;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 14px
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: .8rem;
+            color: #cbd5e1
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            flex-shrink: 0
+        }
+
+        /* HUMAN EXPLANATIONS */
+        .explanation-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px
+        }
+
+        .exp-title {
+            font-size: .78rem;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: .08em
+        }
+
+        .exp-item {
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            background: var(--surface2);
+            border-radius: 9px;
+            border: 1px solid var(--border)
+        }
+
+        .exp-feature {
+            font-size: .82rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .exp-arrow {
+            font-size: .9rem
+        }
+
+        .exp-text {
+            font-size: .75rem;
+            color: var(--muted);
+            line-height: 1.5
+        }
+
+        .dir-up {
+            color: #ef4444
+        }
+
+        .dir-down {
+            color: #10b981
+        }
+
+        /* LOADING */
+        .loading-wrap {
+            text-align: center;
+            padding: 60px 20px
+        }
+
+        .big-spinner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 4px solid var(--surface3);
+            border-top-color: var(--purple);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .loading-status {
+            color: var(--muted);
+            font-size: .88rem;
+            margin-bottom: 6px
+        }
+
+        .loading-sub {
+            color: #475569;
+            font-size: .78rem
+        }
+
+        .btn-load {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 28px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            color: #fff;
+            font-size: .88rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all .2s;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, .3)
+        }
+
+        .btn-load:hover {
+            transform: translateY(-1px)
+        }
+
+        .btn-load:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border-radius: 9px;
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: all .2s
+        }
+
+        .btn-nav:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        .btn-next {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            color: #fff;
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 700;
+            transition: all .2s
+        }
+
+        .btn-next:hover {
+            transform: translateY(-1px)
+        }
+
+        @media(max-width:900px) {
+            .xai-layout {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-wrap">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+    </div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg></div>
+                CardioGuard AI
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="alerts.html" class="nav-link">Alerts</a>
+                <a href="explain.html" class="nav-link active">XAI</a>
+                <a href="factors.html" class="nav-link">Factors</a>
+                <a href="action.html" class="nav-link">Action</a>
+                <a href="simulate.html" class="nav-link">Simulate</a>
+                <a href="report.html" class="nav-link">Report</a>
+            </div>
+        </div>
+    </nav>
+    <div class="page-wrap">
+        <div class="page-tag">Explainability Center · XAI</div>
+        <h1>AI <span class="grad-text">Explainability</span></h1>
+        <p class="page-desc">SHAP provides global model reasoning; LIME provides local instance sensitivity. Both
+            generated identically to research notebook outputs.</p>
+
+        <!-- LOAD BUTTON (first visit) -->
+        <div id="load-section" style="text-align:center;margin-bottom:32px">
+            <button class="btn-load" id="load-btn" onclick="loadXAI()">
+                🔵 Generate SHAP + LIME Analysis
+            </button>
+            <p style="margin-top:10px;font-size:.78rem;color:var(--muted)">⏳ First computation takes 30–60 seconds
+                (KernelExplainer)</p>
+        </div>
+
+        <!-- ERROR -->
+        <div id="xai-error"
+            style="display:none;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;color:#fca5a5;font-size:.85rem;margin-bottom:20px">
+        </div>
+
+        <!-- TABS (shown after load) -->
+        <div id="xai-tabs-wrap" style="display:none">
+            <div class="tab-bar">
+                <button class="tab-btn active" id="tab-shap" onclick="switchTab('shap')">🔵 SHAP — Global
+                    Reasoning</button>
+                <button class="tab-btn" id="tab-lime" onclick="switchTab('lime')">🟣 LIME — Local Sensitivity</button>
+            </div>
+
+            <!-- SHAP PANEL -->
+            <div class="tab-panel active" id="panel-shap">
+                <div class="info-box"><strong>SHAP (SHapley Additive exPlanations)</strong> — Each feature's
+                    contribution to the prediction is computed using Shapley values from cooperative game theory. Red
+                    features push the prediction <strong>toward CHD</strong>; blue features push <strong>away from
+                        CHD</strong>.</div>
+                <div class="xai-layout">
+                    <div class="xai-main">
+                        <div class="plot-card">
+                            <div class="plot-card-title">Force Plot — Feature Contribution Directions</div>
+                            <div id="shap-loading-a" class="loading-wrap">
+                                <div class="big-spinner"></div>
+                                <div class="loading-status">Computing Shapley values…</div>
+                                <div class="loading-sub">Using KernelExplainer with 100 samples</div>
+                            </div>
+                            <img id="shap-force-img" class="plot-img" style="display:none" alt="SHAP Force Plot" />
+                            <p class="plot-note" id="shap-force-note" style="display:none">The SHAP force plot shows how
+                                each feature pushes the prediction away from the base value (expected value). Red values
+                                increase CHD risk; blue values decrease it.</p>
+                        </div>
+                        <div class="plot-card">
+                            <div class="plot-card-title">Bar Plot — Feature Importance Ranking</div>
+                            <div id="shap-loading-b" style="display:none" class="loading-wrap">
+                                <div class="big-spinner"></div>
+                            </div>
+                            <img id="shap-bar-img" class="plot-img" style="display:none" alt="SHAP Bar Plot" />
+                            <p class="plot-note" id="shap-bar-note" style="display:none">Bar plot shows the absolute
+                                magnitude of each feature's Shapley value. Longer bars indicate features with stronger
+                                influence on this particular prediction.</p>
+                        </div>
+                    </div>
+                    <div class="xai-side">
+                        <div class="legend-card">
+                            <div class="legend-title">SHAP Legend</div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#ef4444"></div>Increases CHD Risk ↑
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#3b82f6"></div>Decreases CHD Risk ↓
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#94a3b8"></div>Neutral / Minor Effect
+                            </div>
+                        </div>
+                        <div class="explanation-card" id="shap-explanations">
+                            <div class="exp-title">Human-Readable Explanations</div>
+                            <p style="font-size:.78rem;color:var(--muted)">Explanations will appear after SHAP
+                                computation completes.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIME PANEL -->
+            <div class="tab-panel" id="panel-lime">
+                <div class="info-box"><strong>LIME (Local Interpretable Model-agnostic Explanations)</strong> — LIME
+                    creates a local linear approximation around this specific patient instance using 3,000 perturbed
+                    samples. It reveals which features most sensitively affect this individual prediction.</div>
+                <div class="xai-layout">
+                    <div class="xai-main">
+                        <div class="plot-card">
+                            <div class="plot-card-title">LIME Feature Sensitivity — Local Linear Approximation</div>
+                            <div id="lime-loading" class="loading-wrap">
+                                <div class="big-spinner"></div>
+                                <div class="loading-status">Generating 3,000 perturbations…</div>
+                                <div class="loading-sub">Fitting local linear model</div>
+                            </div>
+                            <img id="lime-img" class="plot-img" style="display:none" alt="LIME Explanation" />
+                            <p class="plot-note" id="lime-note" style="display:none">Green bars indicate features that
+                                reduce CHD risk for this patient; red/orange bars indicate features that increase it.
+                                LIME is specific to this instance, not the entire model.</p>
+                        </div>
+                    </div>
+                    <div class="xai-side">
+                        <div class="legend-card">
+                            <div class="legend-title">LIME Legend</div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#10b981"></div>Pushes Away from CHD ↓
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#ef4444"></div>Pushes Toward CHD ↑
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#94a3b8"></div>Negligible local effect
+                            </div>
+                        </div>
+                        <div class="explanation-card">
+                            <div class="exp-title">LIME vs SHAP Key Difference</div>
+                            <div class="exp-item">
+                                <div class="exp-feature">🔵 SHAP</div>
+                                <div class="exp-text">Global model explanation — consistent across instances using the
+                                    full Shapley framework.</div>
+                            </div>
+                            <div class="exp-item">
+                                <div class="exp-feature">🟣 LIME</div>
+                                <div class="exp-text">Local instance explanation — specific to this patient's unique
+                                    risk profile using local linear approximation.</div>
+                            </div>
+                            <div class="exp-item">
+                                <div class="exp-feature">🎯 Best Practice</div>
+                                <div class="exp-text">Use SHAP for feature ranking; use LIME for local sensitivity in
+                                    borderline cases.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px">
+            <a href="alerts.html" class="btn-nav">← Alerts</a>
+            <a href="factors.html" class="btn-next">Feature Factors →</a>
+        </div>
+    </div>
+
+    <script>
+        const DATA_KEY = 'cg_payload';
+        const XAI_KEY = 'cg_xai';
+        let xaiLoaded = false;
+
+        // Restore cached XAI data if available
+        const cachedXAI = localStorage.getItem(XAI_KEY);
+        if (cachedXAI) {
+            try {
+                const d = JSON.parse(cachedXAI);
+                showXAI(d);
+            } catch (e) { }
+        }
+
+        async function loadXAI() {
+            const payload = JSON.parse(localStorage.getItem(DATA_KEY) || 'null');
+            if (!payload) { alert('No assessment data. Please complete assessment first.'); return; }
+            const btn = document.getElementById('load-btn');
+            btn.disabled = true; btn.innerHTML = '<div style="width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .7s linear infinite"></div> Computing…';
+
+            document.getElementById('xai-tabs-wrap').style.display = 'block';
+            document.getElementById('load-section').style.display = 'none';
+
+            try {
+                const res = await fetch('/explain', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload), signal: AbortSignal.timeout(120000)
+                });
+                if (!res.ok) throw new Error('Server ' + res.status);
+                const data = await res.json();
+                localStorage.setItem(XAI_KEY, JSON.stringify(data));
+                showXAI(data);
+            } catch (err) {
+                document.getElementById('xai-error').style.display = 'block';
+                document.getElementById('xai-error').textContent = '❌ ' + err.message;
+                document.getElementById('shap-loading-a').style.display = 'none';
+                document.getElementById('lime-loading').style.display = 'none';
+                btn.disabled = false;
+                btn.innerHTML = '🔵 Retry SHAP + LIME';
+                document.getElementById('load-section').style.display = 'block';
+            }
+        }
+
+        function showXAI(data) {
+            document.getElementById('xai-tabs-wrap').style.display = 'block';
+            document.getElementById('load-section').style.display = 'none';
+
+            // SHAP
+            document.getElementById('shap-loading-a').style.display = 'none';
+            document.getElementById('shap-loading-b').style.display = 'none';
+            const fi = document.getElementById('shap-force-img');
+            const bi = document.getElementById('shap-bar-img');
+            fi.src = 'data:image/png;base64,' + data.shap_force; fi.style.display = 'block';
+            bi.src = 'data:image/png;base64,' + data.shap_bar; bi.style.display = 'block';
+            document.getElementById('shap-force-note').style.display = 'block';
+            document.getElementById('shap-bar-note').style.display = 'block';
+
+            // Human explanations
+            const payload = JSON.parse(localStorage.getItem(DATA_KEY) || '{}');
+            generateHumanExplanations(payload);
+
+            // LIME
+            document.getElementById('lime-loading').style.display = 'none';
+            const li = document.getElementById('lime-img');
+            li.src = 'data:image/png;base64,' + data.lime; li.style.display = 'block';
+            document.getElementById('lime-note').style.display = 'block';
+        }
+
+        function generateHumanExplanations(d) {
+            const rules = [
+                { f: 'totChol', val: d.totChol, thresh: 200, dir: 'high', text: (v) => `Cholesterol of ${v} mg/dL ${v > 240 ? 'is critically elevated, strongly linked to arterial plaque.' : v > 200 ? 'exceeds normal range, contributing to atherosclerosis risk.' : 'is within acceptable range.'}` },
+                { f: 'pulse_pressure', val: d.pulse_pressure, thresh: 55, dir: 'high', text: (v) => `Pulse pressure of ${v} mmHg ${v > 65 ? 'indicates significant arterial stiffness — a key CHD predictor.' : v > 55 ? 'is slightly elevated, suggesting early vascular stiffening.' : 'is within normal range.'}` },
+                { f: 'glucose', val: d.glucose, thresh: 100, dir: 'high', text: (v) => `Glucose of ${v} mg/dL ${v > 126 ? 'meets diabetic threshold — 2x CHD risk amplification.' : v > 100 ? 'is pre-diabetic range — increased endothelial damage risk.' : 'is in optimal range.'}` },
+                { f: 'BMI', val: d.BMI, thresh: 25, dir: 'high', text: (v) => `BMI of ${v} kg/m² ${v > 30 ? 'indicates obesity — increases cardiac workload significantly.' : v > 25 ? 'is overweight — moderate CHD risk elevation.' : 'is in healthy weight range.'}` },
+                { f: 'cigsPerDay', val: d.cigsPerDay, thresh: 1, dir: 'high', text: (v) => `${v > 0 ? `Smoking ${v} cigarettes/day — each cigarette damages endothelium and promotes clot formation.` : 'Non-smoker — significant protective factor.'}` },
+            ];
+
+            const html = rules.map(r => {
+                const isRisk = r.dir === 'high' ? r.val > r.thresh : r.val < r.thresh;
+                return `
+    <div class="exp-item">
+      <div class="exp-feature">${isRisk ? '<span class="dir-up">↑</span>' : '<span class="dir-down">↓</span>'} ${r.f.replace('_', ' ').replace('totChol', 'Total Cholesterol').replace('pulse_pressure', 'Pulse Pressure')}</div>
+      <div class="exp-text">${r.text(r.val)}</div>
+    </div>`;
+            }).join('');
+
+            document.getElementById('shap-explanations').innerHTML = `<div class="exp-title">Human-Readable Explanations</div>${html}`;
+        }
+
+        function switchTab(tab) {
+            ['shap', 'lime'].forEach(t => {
+                document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+                document.getElementById('panel-' + t).classList.toggle('active', t === tab);
+            });
+        }
+
+        // Check if data loaded already
+        if (cachedXAI) document.getElementById('load-section').style.display = 'none';
+    </script>
+</body>
+
+</html>

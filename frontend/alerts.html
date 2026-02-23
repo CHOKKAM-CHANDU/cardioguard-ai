@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI – Early Warning Center</title>
+    <meta name="description"
+        content="CHD risk early warning system with alert severity, triggering variables, and action urgency indicators." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .12;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 550px;
+            height: 550px;
+            background: #ef4444;
+            top: -200px;
+            right: -100px
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #8b5cf6;
+            bottom: -100px;
+            left: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(6, 11, 24, .85);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .nav-logo-icon svg {
+            width: 16px;
+            height: 16px
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            border-radius: 7px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 500;
+            transition: all .2s
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--surface2);
+            color: var(--text)
+        }
+
+        .nav-link.active {
+            color: #f87171
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 36px 24px 80px
+        }
+
+        .grad-text {
+            background: linear-gradient(135deg, #f87171, #fb923c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        .page-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(239, 68, 68, .1);
+            border: 1px solid rgba(239, 68, 68, .3);
+            color: #fca5a5;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-bottom: 14px
+        }
+
+        .blink {
+            animation: blink 1.2s ease-in-out infinite
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .3
+            }
+        }
+
+        h1 {
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 8px
+        }
+
+        .page-desc {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-bottom: 32px
+        }
+
+        /* ALERT SUMMARY */
+        .alert-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px
+        }
+
+        .sum-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center
+        }
+
+        .sum-num {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 4px
+        }
+
+        .sum-label {
+            font-size: .72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .06em
+        }
+
+        /* ALERT CARDS */
+        .alerts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 28px
+        }
+
+        .alert-card {
+            background: var(--surface);
+            border: 1px solid;
+            border-radius: var(--radius);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all .3s
+        }
+
+        .alert-card:hover {
+            transform: translateY(-2px)
+        }
+
+        .alert-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            border-radius: 4px 0 0 4px
+        }
+
+        .ac-critical::before {
+            background: #ef4444
+        }
+
+        .ac-warning::before {
+            background: #f59e0b
+        }
+
+        .ac-info::before {
+            background: #3b82f6
+        }
+
+        .ac-critical {
+            border-color: rgba(239, 68, 68, .3);
+            background: rgba(239, 68, 68, .04)
+        }
+
+        .ac-warning {
+            border-color: rgba(245, 158, 11, .3);
+            background: rgba(245, 158, 11, .04)
+        }
+
+        .ac-info {
+            border-color: rgba(59, 130, 246, .3);
+            background: rgba(59, 130, 246, .04)
+        }
+
+        .alert-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px
+        }
+
+        .alert-card-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px
+        }
+
+        .alert-emoji {
+            font-size: 1.6rem;
+            margin-top: 2px
+        }
+
+        .alert-title {
+            font-size: .95rem;
+            font-weight: 700;
+            margin-bottom: 4px
+        }
+
+        .alert-subtitle {
+            font-size: .8rem;
+            color: #94a3b8;
+            line-height: 1.5
+        }
+
+        .alert-severity {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            white-space: nowrap
+        }
+
+        .sev-critical {
+            background: rgba(239, 68, 68, .15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, .3)
+        }
+
+        .sev-warning {
+            background: rgba(245, 158, 11, .15);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, .3)
+        }
+
+        .sev-info {
+            background: rgba(59, 130, 246, .15);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, .3)
+        }
+
+        /* FOOTER DETAILS */
+        .alert-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+
+        .detail-chip {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px
+        }
+
+        .detail-label {
+            font-size: .65rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 3px
+        }
+
+        .detail-val {
+            font-size: .82rem;
+            color: #cbd5e1;
+            font-weight: 500
+        }
+
+        .urgency-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 700;
+            margin-top: 14px
+        }
+
+        .u-immediate {
+            background: rgba(239, 68, 68, .12);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, .3)
+        }
+
+        .u-soon {
+            background: rgba(245, 158, 11, .12);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, .3)
+        }
+
+        .u-monitor {
+            background: rgba(59, 130, 246, .12);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, .3)
+        }
+
+        /* TIMELINE */
+        .timeline-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 24px
+        }
+
+        .section-title {
+            font-size: .7rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0
+        }
+
+        .tl-item {
+            display: flex;
+            gap: 16px;
+            position: relative;
+            padding-bottom: 20px
+        }
+
+        .tl-item:last-child {
+            padding-bottom: 0
+        }
+
+        .tl-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 32px;
+            flex-shrink: 0
+        }
+
+        .tl-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 4px
+        }
+
+        .tl-line {
+            width: 2px;
+            flex: 1;
+            margin-top: 4px;
+            min-height: 24px
+        }
+
+        .tl-right {
+            flex: 1
+        }
+
+        .tl-time {
+            font-size: .7rem;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 4px
+        }
+
+        .tl-label {
+            font-size: .85rem;
+            color: #cbd5e1;
+            font-weight: 500
+        }
+
+        .tl-val {
+            font-size: .78rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: #60a5fa
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 28px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .88rem;
+            font-weight: 600;
+            transition: all .2s;
+            text-decoration: none
+        }
+
+        .btn-nav:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 28px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff;
+            font-size: .88rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all .2s;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, .3)
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-wrap">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+    </div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg></div>
+                CardioGuard AI
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="alerts.html" class="nav-link active">Alerts</a>
+                <a href="explain.html" class="nav-link">XAI</a>
+                <a href="factors.html" class="nav-link">Factors</a>
+                <a href="action.html" class="nav-link">Action</a>
+                <a href="simulate.html" class="nav-link">Simulate</a>
+                <a href="report.html" class="nav-link">Report</a>
+            </div>
+        </div>
+    </nav>
+    <div class="page-wrap">
+        <div class="page-tag"><span class="blink">●</span> Early Warning Center</div>
+        <h1>Clinical <span class="grad-text">Alert System</span></h1>
+        <p class="page-desc">Biomarker threshold monitoring with severity classification and action urgency indicators.
+        </p>
+
+        <div class="alert-summary" id="alert-summary">
+            <!-- Dynamic -->
+        </div>
+        <div class="alerts-list" id="alerts-list"></div>
+
+        <div class="timeline-section">
+            <div class="section-title">Warning Trigger Timeline</div>
+            <div class="timeline" id="timeline"></div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <a href="dashboard.html" class="btn-nav">← Dashboard</a>
+            <a href="explain.html" class="btn-primary">View XAI Explanation →</a>
+        </div>
+    </div>
+
+    <script>
+        const DATA_KEY = 'cg_payload';
+        const RES_KEY = 'cg_result';
+        const payload = JSON.parse(localStorage.getItem(DATA_KEY) || 'null');
+        const result = JSON.parse(localStorage.getItem(RES_KEY) || 'null');
+
+        // CLINICAL THRESHOLDS
+        const thresholds = [
+            { id: 'totChol', label: 'Total Cholesterol', unit: 'mg/dL', warn: 200, critical: 240, direction: 'high', note: 'Linked to arterial plaque formation and LDL accumulation.', system: 'Cardiovascular' },
+            { id: 'pulse_pressure', label: 'Pulse Pressure', unit: 'mmHg', warn: 55, critical: 65, direction: 'high', note: 'High pulse pressure indicates arterial stiffness and increased cardiac load.', system: 'Vascular' },
+            { id: 'glucose', label: 'Fasting Glucose', unit: 'mg/dL', warn: 100, critical: 126, direction: 'high', note: 'Pre-diabetes/Diabetes threshold. Elevated glucose damages vascular endothelium.', system: 'Metabolic' },
+            { id: 'BMI', label: 'Body Mass Index', unit: 'kg/m²', warn: 25, critical: 30, direction: 'high', note: 'Obesity increases cardiac workload and is strongly linked to hypertension and CHD.', system: 'Metabolic' },
+            { id: 'heartRate', label: 'Resting Heart Rate', unit: 'bpm', warn: 85, critical: 100, direction: 'high', note: 'Elevated resting HR reduces cardiac efficiency and increases CHD mortality risk.', system: 'Cardiac' },
+            { id: 'cigsPerDay', label: 'Cigarettes per Day', unit: 'cigs', warn: 1, critical: 10, direction: 'high', note: 'Any smoking damages endothelium and promotes arterial plaque formation.', system: 'Lifestyle' },
+            { id: 'age', label: 'Age Risk Factor', unit: 'years', warn: 45, critical: 60, direction: 'high', note: 'CHD risk increases substantially after age 45 in men and 55 in women.', system: 'Demographic' },
+        ];
+
+        const binaryAlerts = [
+            { id: 'prevalentHyp', label: 'Hypertension Detected', emoji: '🩺', note: 'Prevalently hypertensive patients have significantly higher CHD risk. Blood pressure management is critical.', severity: 'critical', system: 'Cardiovascular', urgency: 'immediate' },
+            { id: 'prevalentStroke', label: 'Prior Stroke History', emoji: '🧠', note: 'Previous stroke is a strong indicator of existing cerebrovascular disease and future cardiac events.', severity: 'critical', system: 'Neurological', urgency: 'immediate' },
+            { id: 'diabetes', label: 'Diabetes Diagnosed', emoji: '🩸', note: 'Diabetic patients have 2x the baseline CHD risk due to advanced glycation and vascular damage.', severity: 'critical', system: 'Metabolic', urgency: 'immediate' },
+            { id: 'BPMeds', label: 'On BP Medication', emoji: '💊', note: 'Indicates underlying hypertension being pharmacologically managed. Medication adherence is essential.', severity: 'warning', system: 'Medication', urgency: 'monitor' },
+        ];
+
+        if (!payload) {
+            document.getElementById('alerts-list').innerHTML = '<p style="color:var(--muted);padding:24px">No assessment data. <a href="assess.html" style="color:#3b82f6">Start assessment</a></p>';
+        } else {
+            generateAlerts(payload, result);
+        }
+
+        function generateAlerts(d, r) {
+            const activeAlerts = [];
+            const timeline = [];
+            const now = new Date();
+
+            // Continuous thresholds
+            thresholds.forEach(t => {
+                const val = d[t.id];
+                if (val === undefined || val === null) return;
+                let severity = null;
+                if (t.direction === 'high' && val >= t.critical) severity = 'critical';
+                else if (t.direction === 'high' && val >= t.warn) severity = 'warning';
+                else if (t.direction === 'low' && val <= t.critical) severity = 'critical';
+                else if (t.direction === 'low' && val <= t.warn) severity = 'warning';
+                if (severity) {
+                    activeAlerts.push({ ...t, val, severity, urgency: severity === 'critical' ? 'immediate' : 'soon' });
+                    timeline.push({ label: t.label, val: val + ' ' + t.unit, color: severity === 'critical' ? '#ef4444' : '#f59e0b', time: `Assessment`, severity });
+                }
+            });
+
+            // Binary alerts
+            binaryAlerts.forEach(b => {
+                if (d[b.id] === 1) {
+                    activeAlerts.push({ ...b, type: 'binary' });
+                    timeline.push({ label: b.label, val: 'Positive', color: '#ef4444', time: 'Assessment', severity: 'critical' });
+                }
+            });
+
+            // SUMMARY COUNTS
+            const criticalCount = activeAlerts.filter(a => a.severity === 'critical').length;
+            const warningCount = activeAlerts.filter(a => a.severity === 'warning').length;
+            const totalCount = activeAlerts.length;
+            const riskLabel = r ? r.risk_label : 'UNKNOWN';
+
+            document.getElementById('alert-summary').innerHTML = `
+    <div class="sum-card"><div class="sum-num" style="color:#ef4444">${criticalCount}</div><div class="sum-label">Critical Alerts</div></div>
+    <div class="sum-card"><div class="sum-num" style="color:#f59e0b">${warningCount}</div><div class="sum-label">Warnings</div></div>
+    <div class="sum-card"><div class="sum-num" style="color:#3b82f6">${totalCount}</div><div class="sum-label">Total Triggers</div></div>
+    <div class="sum-card"><div class="sum-num" style="color:${riskLabel.includes('HIGH') ? '#ef4444' : '#10b981'};font-size:1.2rem">${riskLabel}</div><div class="sum-label">Risk Status</div></div>
+  `;
+
+            if (activeAlerts.length === 0) {
+                document.getElementById('alerts-list').innerHTML = `
+      <div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.3);border-radius:16px;padding:36px;text-align:center">
+        <div style="font-size:3rem;margin-bottom:14px">✅</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#10b981;margin-bottom:8px">No Clinical Alerts</div>
+        <p style="color:#94a3b8;font-size:.88rem">All biomarkers are within normal clinical ranges. No threshold violations detected.</p>
+      </div>`;
+                return;
+            }
+
+            // GENERATE ALERT CARDS
+            const alertsHtml = activeAlerts.map(a => {
+                const sClass = a.severity === 'critical' ? 'ac-critical' : a.severity === 'warning' ? 'ac-warning' : 'ac-info';
+                const sevClass = a.severity === 'critical' ? 'sev-critical' : a.severity === 'warning' ? 'sev-warning' : 'sev-info';
+                const urgClass = a.urgency === 'immediate' ? 'u-immediate' : a.urgency === 'soon' ? 'u-soon' : 'u-monitor';
+                const emoji = a.emoji || (a.severity === 'critical' ? '🚨' : a.severity === 'warning' ? '⚠️' : 'ℹ️');
+                const valDisplay = a.type === 'binary' ? (`${a.label} — Condition Present`) : `${a.label}: ${a.val} ${a.unit || ''}`;
+                const refVal = a.critical ? `Critical threshold: ${a.critical} ${a.unit || ''}` : null;
+                const warnVal = a.warn ? `Warning threshold: ${a.warn} ${a.unit || ''}` : null;
+                return `
+    <div class="alert-card ${sClass}" style="animation:slideIn .4s ease">
+      <div class="alert-card-top">
+        <div class="alert-card-left">
+          <span class="alert-emoji">${emoji}</span>
+          <div>
+            <div class="alert-title">${a.label}</div>
+            <div class="alert-subtitle">${a.note || ''}</div>
+          </div>
+        </div>
+        <span class="alert-severity ${sevClass}">${(a.severity || 'info').toUpperCase()}</span>
+      </div>
+      <div class="alert-details">
+        <div class="detail-chip">
+          <div class="detail-label">Triggering Value</div>
+          <div class="detail-val" style="color:${a.severity === 'critical' ? '#f87171' : '#fcd34d'}">${a.type === 'binary' ? 'Present' : a.val + ' ' + (a.unit || '')}</div>
+        </div>
+        <div class="detail-chip">
+          <div class="detail-label">Organ System</div>
+          <div class="detail-val">${a.system || 'General'}</div>
+        </div>
+        ${refVal ? `<div class="detail-chip"><div class="detail-label">Critical Threshold</div><div class="detail-val">${refVal}</div></div>` : ''}
+        ${warnVal ? `<div class="detail-chip"><div class="detail-label">Warning Threshold</div><div class="detail-val">${warnVal}</div></div>` : ''}
+      </div>
+      <div>
+        <span class="urgency-tag ${urgClass}">
+          ⏱ Action Urgency: ${a.urgency === 'immediate' ? 'Immediate Clinical Review' : a.urgency === 'soon' ? 'Address Within 1–2 Weeks' : 'Monitor & Re-evaluate'}
+        </span>
+      </div>
+    </div>`;
+            }).join('');
+
+            document.getElementById('alerts-list').innerHTML = alertsHtml;
+
+            // TIMELINE
+            if (timeline.length === 0) {
+                document.getElementById('timeline').innerHTML = '<p style="color:var(--muted);font-size:.85rem">No warning triggers recorded.</p>';
+            } else {
+                document.getElementById('timeline').innerHTML = timeline.map((t, i) => `
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot" style="background:${t.color};box-shadow:0 0 8px ${t.color}40"></div>
+          ${i < timeline.length - 1 ? `<div class="tl-line" style="background:linear-gradient(to bottom,${t.color}40,transparent)"></div>` : ''}
+        </div>
+        <div class="tl-right">
+          <div class="tl-time">${t.time} · ${t.severity.toUpperCase()}</div>
+          <div class="tl-label">${t.label}</div>
+          <div class="tl-val">${t.val}</div>
+        </div>
+      </div>`).join('');
+            }
+        }
+    </script>
+    <style>
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+    </style>
+</body>
+
+</html>

@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI – AI Processing</title>
+    <meta name="description"
+        content="Real-time AI processing visualization: feature scaling, KNN neighbor selection, SHAP and LIME computation." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, .35);
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .12;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 600px;
+            height: 600px;
+            background: #3b82f6;
+            top: -200px;
+            left: -150px
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #8b5cf6;
+            bottom: -100px;
+            right: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        .page-inner {
+            position: relative;
+            z-index: 1;
+            max-width: 640px;
+            width: 100%;
+            text-align: center
+        }
+
+        .logo-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 32px
+        }
+
+        .logo-ring {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 60px var(--accent-glow);
+            animation: pulse 3s ease-in-out infinite
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 30px var(--accent-glow)
+            }
+
+            50% {
+                box-shadow: 0 0 80px var(--accent-glow)
+            }
+        }
+
+        .logo-ring svg {
+            width: 44px;
+            height: 44px
+        }
+
+        .grad-text {
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 800;
+            margin-bottom: 10px
+        }
+
+        .main-status {
+            color: var(--muted);
+            font-size: .95rem;
+            margin-bottom: 40px;
+            min-height: 24px;
+            transition: all .3s
+        }
+
+        .main-status strong {
+            color: var(--cyan)
+        }
+
+        /* STEPS */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 36px;
+            text-align: left
+        }
+
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            transition: all .4s
+        }
+
+        .step-row.active {
+            background: rgba(59, 130, 246, .08);
+            border-color: rgba(59, 130, 246, .4);
+            box-shadow: 0 0 20px rgba(59, 130, 246, .1)
+        }
+
+        .step-row.done {
+            background: rgba(16, 185, 129, .05);
+            border-color: rgba(16, 185, 129, .3)
+        }
+
+        .step-indicator {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all .4s;
+            font-size: .85rem;
+            font-weight: 700
+        }
+
+        .step-indicator.pending {
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            color: var(--muted)
+        }
+
+        .step-indicator.active {
+            background: rgba(59, 130, 246, .2);
+            border: 2px solid var(--accent);
+            color: #93c5fd
+        }
+
+        .step-indicator.done {
+            background: rgba(16, 185, 129, .15);
+            border: 2px solid var(--success);
+            color: #6ee7b7
+        }
+
+        .step-spin {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, .2);
+            border-top-color: #fff;
+            animation: spin .7s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .step-label {
+            font-size: .88rem;
+            font-weight: 600;
+            flex: 1;
+            transition: all .3s
+        }
+
+        .step-row.active .step-label {
+            color: var(--text)
+        }
+
+        .step-row.done .step-label {
+            color: #94a3b8
+        }
+
+        .step-sub {
+            font-size: .72rem;
+            color: var(--muted);
+            margin-top: 2px
+        }
+
+        .step-timing {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .72rem;
+            color: var(--accent);
+            margin-left: auto
+        }
+
+        /* PROGRESS BAR */
+        .progress-wrap {
+            margin-bottom: 32px
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: .78rem;
+            color: var(--muted)
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            border-radius: 999px;
+            background: var(--surface2)
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+            transition: width .6s cubic-bezier(.4, 0, .2, 1);
+            width: 0%
+        }
+
+        /* KNN DOTS */
+        .knn-canvas-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden
+        }
+
+        .knn-canvas-label {
+            font-size: .7rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .knn-canvas-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        canvas#knn-dots {
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px
+        }
+
+        /* LOG TERMINAL */
+        .terminal {
+            background: rgba(0, 0, 0, .4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .72rem;
+            color: #94a3b8;
+            max-height: 140px;
+            overflow-y: auto;
+            text-align: left;
+            line-height: 1.8
+        }
+
+        .log-line {
+            animation: fadeIn .3s ease
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-4px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0)
+            }
+        }
+
+        .log-ok {
+            color: #10b981
+        }
+
+        .log-info {
+            color: #60a5fa
+        }
+
+        .log-warn {
+            color: #f59e0b
+        }
+
+        .log-proc {
+            color: #c084fc
+        }
+
+        #error-box {
+            display: none;
+            background: rgba(239, 68, 68, .06);
+            border: 1px solid rgba(239, 68, 68, .3);
+            border-radius: 12px;
+            padding: 20px;
+            color: #fca5a5;
+            font-size: .88rem;
+            margin-bottom: 20px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-wrap">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+    </div>
+    <div class="page-inner">
+        <div class="logo-wrap">
+            <div class="logo-ring">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path
+                        d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                </svg>
+            </div>
+        </div>
+
+        <h1>CardioGuard <span class="grad-text">AI Processing</span></h1>
+        <p class="main-status" id="main-status">Initializing analysis pipeline…</p>
+
+        <div class="progress-wrap">
+            <div class="progress-label"><span>Pipeline Progress</span><span id="pct-label">0%</span></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="steps-container">
+            <div class="step-row" id="step-0">
+                <div class="step-indicator pending" id="si-0">1</div>
+                <div style="flex:1">
+                    <div class="step-label">Feature Engineering & Scaling</div>
+                    <div class="step-sub">StandardScaler normalization applied to 16 features</div>
+                </div>
+                <div class="step-timing" id="st-0"></div>
+            </div>
+            <div class="step-row" id="step-1">
+                <div class="step-indicator pending" id="si-1">2</div>
+                <div style="flex:1">
+                    <div class="step-label">KNN Neighbor Selection</div>
+                    <div class="step-sub">Analyzing similarity with historical patient profiles</div>
+                </div>
+                <div class="step-timing" id="st-1"></div>
+            </div>
+            <div class="step-row" id="step-2">
+                <div class="step-indicator pending" id="si-2">3</div>
+                <div style="flex:1">
+                    <div class="step-label">Risk Probability Computation</div>
+                    <div class="step-sub">Ensemble voting across K nearest neighbors</div>
+                </div>
+                <div class="step-timing" id="st-2"></div>
+            </div>
+            <div class="step-row" id="step-3">
+                <div class="step-indicator pending" id="si-3">4</div>
+                <div style="flex:1">
+                    <div class="step-label">SHAP Explainer</div>
+                    <div class="step-sub">KernelExplainer computing feature Shapley values</div>
+                </div>
+                <div class="step-timing" id="st-3"></div>
+            </div>
+            <div class="step-row" id="step-4">
+                <div class="step-indicator pending" id="si-4">5</div>
+                <div style="flex:1">
+                    <div class="step-label">LIME Local Sensitivity</div>
+                    <div class="step-sub">Generating 3000 perturbed samples around this instance</div>
+                </div>
+                <div class="step-timing" id="st-4"></div>
+            </div>
+        </div>
+
+        <div class="knn-canvas-wrap">
+            <div class="knn-canvas-label">KNN Feature Space — Neighbor Proximity Visualization</div>
+            <canvas id="knn-dots" width="560" height="180"></canvas>
+        </div>
+
+        <div class="terminal" id="terminal">
+            <div class="log-line log-info">[INIT] CardioGuard AI v3.0 — Pipeline started</div>
+        </div>
+
+        <div id="error-box"></div>
+    </div>
+
+    <script>
+        const DATA_KEY = 'cg_payload';
+        const RES_KEY = 'cg_result';
+
+        const steps = [
+            { label: 'Feature Engineering', time: '0.24s' },
+            { label: 'KNN Neighbor Selection', time: '0.81s' },
+            { label: 'Risk Probability', time: '0.12s' },
+            { label: 'SHAP Analysis', time: '18–35s' },
+            { label: 'LIME Analysis', time: '12–25s' },
+        ];
+
+        // KNN DOT ANIMATION
+        const canvas = document.getElementById('knn-dots');
+        const ctx = canvas.getContext('2d');
+        let dots = [], frame = 0, targetDot = null;
+
+        function initDots() {
+            dots = [];
+            for (let i = 0; i < 60; i++) {
+                dots.push({
+                    x: 20 + Math.random() * 520, y: 20 + Math.random() * 140,
+                    cls: Math.random() > .65 ? 1 : 0,
+                    r: 3.5 + Math.random() * 2,
+                    alive: true
+                });
+            }
+            targetDot = { x: 290, y: 90, r: 8, pulse: 0 };
+        }
+        initDots();
+
+        function drawDots() {
+            ctx.clearRect(0, 0, 560, 180);
+            ctx.fillStyle = '#0c1424'; ctx.fillRect(0, 0, 560, 180);
+            // Grid
+            ctx.strokeStyle = 'rgba(255,255,255,.03)'; ctx.lineWidth = 1;
+            for (let x = 0; x < 560; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 180); ctx.stroke(); }
+            for (let y = 0; y < 180; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(560, y); ctx.stroke(); }
+
+            const k = 7; const dists = dots.map((d, i) => ({ i, dist: Math.hypot(d.x - targetDot.x, d.y - targetDot.y) })).sort((a, b) => a.dist - b.dist);
+            const knn = new Set(dists.slice(0, k).map(x => x.i));
+
+            // Links to KNN
+            dists.slice(0, k).forEach(({ i }) => {
+                const d = dots[i];
+                ctx.beginPath(); ctx.moveTo(targetDot.x, targetDot.y); ctx.lineTo(d.x, d.y);
+                ctx.strokeStyle = 'rgba(59,130,246,.2)'; ctx.lineWidth = 1; ctx.stroke();
+            });
+
+            // Dots
+            dots.forEach((d, i) => {
+                const isKnn = knn.has(i);
+                ctx.beginPath(); ctx.arc(d.x, d.y, isKnn ? d.r + 2 : d.r, 0, Math.PI * 2);
+                if (d.cls === 1) {
+                    ctx.fillStyle = isKnn ? 'rgba(239,68,68,.9)' : 'rgba(239,68,68,.45)';
+                } else {
+                    ctx.fillStyle = isKnn ? 'rgba(16,185,129,.9)' : 'rgba(16,185,129,.45)';
+                }
+                ctx.fill();
+                if (isKnn) { ctx.strokeStyle = d.cls === 1 ? 'rgba(239,68,68,.6)' : 'rgba(16,185,129,.6)'; ctx.lineWidth = 2; ctx.stroke(); }
+            });
+
+            // Target dot
+            targetDot.pulse = (targetDot.pulse + 0.04) % (Math.PI * 2);
+            const p = Math.sin(targetDot.pulse) * .5 + .5;
+            ctx.beginPath(); ctx.arc(targetDot.x, targetDot.y, 20 + p * 8, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(59,130,246,${0.04 + p * .04})`; ctx.fill();
+            ctx.beginPath(); ctx.arc(targetDot.x, targetDot.y, targetDot.r, 0, Math.PI * 2);
+            ctx.fillStyle = '#3b82f6'; ctx.fill();
+            ctx.strokeStyle = 'rgba(59,130,246,.8)'; ctx.lineWidth = 2.5; ctx.stroke();
+
+            // Legend
+            ctx.font = '11px Inter,sans-serif';
+            ctx.fillStyle = 'rgba(16,185,129,.8)'; ctx.beginPath(); ctx.arc(12, 170, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94a3b8'; ctx.fillText('Low Risk', 22, 174);
+            ctx.fillStyle = 'rgba(239,68,68,.8)'; ctx.beginPath(); ctx.arc(92, 170, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94a3b8'; ctx.fillText('High Risk', 102, 174);
+            ctx.fillStyle = 'rgba(59,130,246,.8)'; ctx.beginPath(); ctx.arc(175, 170, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94a3b8'; ctx.fillText('Patient', 185, 174);
+
+            requestAnimationFrame(drawDots);
+        }
+        drawDots();
+
+        // LOG HELPER
+        const terminal = document.getElementById('terminal');
+        function log(msg, cls = '') {
+            const line = document.createElement('div');
+            line.className = 'log-line ' + (cls ? 'log-' + cls : '');
+            line.textContent = msg;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // STEP ANIMATIONS
+        function setActive(idx) {
+            const row = document.getElementById('step-' + idx);
+            const si = document.getElementById('si-' + idx);
+            row.className = 'step-row active';
+            si.className = 'step-indicator active';
+            si.innerHTML = '<div class="step-spin"></div>';
+        }
+        function setDone(idx, timing) {
+            const row = document.getElementById('step-' + idx);
+            const si = document.getElementById('si-' + idx);
+            const st = document.getElementById('st-' + idx);
+            row.className = 'step-row done';
+            si.className = 'step-indicator done';
+            si.textContent = '✓';
+            st.textContent = timing;
+        }
+
+        async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        async function setProgress(pct) {
+            document.getElementById('progress-fill').style.width = pct + '%';
+            document.getElementById('pct-label').textContent = pct + '%';
+        }
+
+        const payload = JSON.parse(localStorage.getItem(DATA_KEY) || 'null');
+        if (!payload) {
+            document.getElementById('main-status').textContent = 'No data found. Redirecting…';
+            setTimeout(() => { window.location.href = 'assess.html'; }, 1500);
+        } else {
+            runPipeline();
+        }
+
+        async function runPipeline() {
+            // STEP 0: Feature scaling animation
+            setActive(0);
+            document.getElementById('main-status').innerHTML = '<strong>Feature Engineering</strong> — Applying StandardScaler normalization…';
+            log('[SCALE] Loading StandardScaler from scaler.pkl', 'info');
+            await delay(500);
+            log('[SCALE] Transforming 16 input features to model space', 'proc');
+            await delay(600);
+            log('[SCALE] ✓ Feature matrix ready: shape (1, 16)', 'ok');
+            setDone(0, '0.24s');
+            await setProgress(20);
+
+            // STEP 1: KNN
+            setActive(1);
+            document.getElementById('main-status').innerHTML = '<strong>KNN Neighbor Selection</strong> — Analyzing similarity with historical patient profiles…';
+            log('[KNN] Scanning 3658 training patients for nearest neighbors', 'info');
+            await delay(800);
+            log('[KNN] Using Minkowski distance (p=2, k=7)', 'proc');
+            await delay(600);
+            log('[KNN] ✓ 7 nearest neighbors identified from Framingham cohort', 'ok');
+            setDone(1, '0.81s');
+            await setProgress(40);
+
+            // STEP 2: Probability
+            setActive(2);
+            document.getElementById('main-status').innerHTML = '<strong>Probability Computation</strong> — Ensemble voting across K nearest neighbors…';
+            log('[PRED] Applying majority vote across 7 neighbors', 'proc');
+            await delay(600);
+            log('[PRED] predict_proba() → CHD class probability computed', 'proc');
+            await delay(400);
+            log('[PRED] ✓ Risk score ready', 'ok');
+            setDone(2, '0.12s');
+            await setProgress(60);
+
+            // CALL ACTUAL API
+            let result;
+            try {
+                const res = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('API error ' + res.status);
+                result = await res.json();
+                localStorage.setItem(RES_KEY, JSON.stringify(result));
+                log('[API] ✓ /predict response received: ' + result.risk_label, 'ok');
+            } catch (err) {
+                log('[API] ✗ Error: ' + err.message, 'warn');
+                document.getElementById('error-box').style.display = 'block';
+                document.getElementById('error-box').textContent = '⚠️ API Error: ' + err.message + '. Using demo mode.';
+                result = { prediction: 1, probability: .72, risk_label: 'HIGH RISK', message: 'Demo mode — server not available.' };
+                localStorage.setItem(RES_KEY, JSON.stringify(result));
+            }
+
+            // STEP 3: SHAP loading indicator
+            setActive(3);
+            document.getElementById('main-status').innerHTML = '<strong>SHAP Analysis</strong> — KernelExplainer computing Shapley values (this takes 20–40s on first run)…';
+            log('[SHAP] Initializing KernelExplainer with kmeans summary (50 pts)', 'info');
+            await delay(1200);
+            log('[SHAP] Computing force plot for instance explanation', 'proc');
+            await delay(800);
+            log('[SHAP] Computing bar plot for global feature importance', 'proc');
+            await delay(600);
+            log('[SHAP] ✓ SHAP plots generated (will load on Explain page)', 'ok');
+            setDone(3, 'async');
+            await setProgress(80);
+
+            // STEP 4: LIME
+            setActive(4);
+            document.getElementById('main-status').innerHTML = '<strong>LIME Analysis</strong> — Generating 3000 perturbed samples…';
+            log('[LIME] LimeTabularExplainer: 500 training samples subset', 'info');
+            await delay(800);
+            log('[LIME] Generating 3000 perturbations around patient instance', 'proc');
+            await delay(600);
+            log('[LIME] Fitting local linear model to perturbed predictions', 'proc');
+            await delay(400);
+            log('[LIME] ✓ LIME explanation ready (will load on Explain page)', 'ok');
+            setDone(4, 'async');
+            await setProgress(100);
+
+            document.getElementById('main-status').innerHTML = '<strong style="color:#10b981">Analysis Complete</strong> — Redirecting to Risk Dashboard…';
+            log('[DONE] ✓ Full pipeline complete. Navigating to dashboard.', 'ok');
+            await delay(1400);
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+
+</html>

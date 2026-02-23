@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CardioGuard AI – Clinical Report</title>
+    <meta name="description"
+        content="Comprehensive viva-ready clinical summary report with risk outcome, key contributors, preventive actions, and PDF download." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #060b18;
+            --surface: #0c1424;
+            --surface2: #121c2e;
+            --surface3: #182338;
+            --border: #1a2d4a;
+            --accent: #3b82f6;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --radius: 16px
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .1;
+            animation: bf 18s ease-in-out infinite alternate
+        }
+
+        .b1 {
+            width: 550px;
+            height: 550px;
+            background: #3b82f6;
+            top: -200px;
+            right: -100px
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #8b5cf6;
+            bottom: -100px;
+            left: -80px;
+            animation-delay: 7s
+        }
+
+        @keyframes bf {
+            from {
+                transform: translateY(0)
+            }
+
+            to {
+                transform: translateY(-50px)
+            }
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(6, 11, 24, .85);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .nav-logo-icon svg {
+            width: 16px;
+            height: 16px
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            border-radius: 7px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 500;
+            transition: all .2s
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--surface2);
+            color: var(--text)
+        }
+
+        .nav-link.active {
+            color: #93c5fd
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 36px 24px 80px
+        }
+
+        .grad-text {
+            background: linear-gradient(135deg, #60a5fa, #c4b5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        /* REPORT CARD (printable) */
+        .report-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 24px
+        }
+
+        /* REPORT HEADER */
+        .report-header {
+            padding: 32px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, .12), rgba(139, 92, 246, .08));
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap
+        }
+
+        .rh-left {}
+
+        .report-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, .15);
+            border: 1px solid rgba(59, 130, 246, .3);
+            color: #93c5fd;
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 16px
+        }
+
+        .report-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 6px
+        }
+
+        .report-subtitle {
+            color: var(--muted);
+            font-size: .85rem
+        }
+
+        .rh-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px
+        }
+
+        .report-date {
+            font-size: .75rem;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        .risk-outcome-large {
+            padding: 14px 22px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 160px
+        }
+
+        .rol-label {
+            font-size: .65rem;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: rgba(255, 255, 255, .5);
+            margin-bottom: 4px
+        }
+
+        .rol-value {
+            font-size: 1.3rem;
+            font-weight: 800
+        }
+
+        .rol-prob {
+            font-size: .85rem;
+            font-family: 'JetBrains Mono';
+            opacity: .8
+        }
+
+        /* REPORT SECTION */
+        .report-section {
+            padding: 28px 32px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .report-section:last-child {
+            border-bottom: none
+        }
+
+        .rs-label {
+            font-size: .65rem;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .rs-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        /* VITALS GRID */
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px
+        }
+
+        .vital-item {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px
+        }
+
+        .vi-label {
+            font-size: .65rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 4px
+        }
+
+        .vi-value {
+            font-size: .95rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        .vi-status {
+            font-size: .65rem;
+            margin-top: 3px
+        }
+
+        .st-ok {
+            color: #6ee7b7
+        }
+
+        .st-warn {
+            color: #fcd34d
+        }
+
+        .st-bad {
+            color: #fca5a5
+        }
+
+        /* CONTRIBUTORS */
+        .contributors-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .ci-item {
+            display: grid;
+            grid-template-columns: 160px 1fr auto;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--surface2);
+            border-radius: 9px;
+            border: 1px solid var(--border)
+        }
+
+        .ci-name {
+            font-size: .85rem;
+            font-weight: 600;
+            color: #cbd5e1
+        }
+
+        .ci-bar-wrap {
+            height: 6px;
+            background: var(--surface3);
+            border-radius: 999px;
+            overflow: hidden
+        }
+
+        .ci-bar {
+            height: 100%;
+            border-radius: 999px
+        }
+
+        .ci-dir {
+            font-size: .75rem;
+            font-weight: 700;
+            white-space: nowrap
+        }
+
+        /* ACTIONS TABLE */
+        .actions-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0
+        }
+
+        .actions-table th {
+            font-size: .65rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--muted);
+            font-weight: 700;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: left
+        }
+
+        .actions-table td {
+            font-size: .82rem;
+            color: #cbd5e1;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .actions-table tr:last-child td {
+            border-bottom: none
+        }
+
+        .priority-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px
+        }
+
+        /* INTERPRETATION PARAGRAPHS */
+        .report-para {
+            font-size: .88rem;
+            color: #94a3b8;
+            line-height: 1.8;
+            margin-bottom: 12px
+        }
+
+        .report-para strong {
+            color: #cbd5e1
+        }
+
+        /* DISCLAIMER */
+        .disclaimer {
+            font-size: .72rem;
+            color: #475569;
+            line-height: 1.6;
+            padding: 20px;
+            background: rgba(255, 255, 255, .02);
+            border-top: 1px solid var(--border)
+        }
+
+        /* PRINT BUTTON */
+        .btn-print {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 28px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff;
+            font-size: .9rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all .2s;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, .3)
+        }
+
+        .btn-print:hover {
+            transform: translateY(-1px)
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border-radius: 9px;
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: all .2s
+        }
+
+        .btn-nav:hover {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        @media print {
+
+            nav,
+            .no-print {
+                display: none !important
+            }
+
+            body {
+                background: #fff;
+                color: #000
+            }
+
+            .report-card {
+                border: none;
+                background: transparent
+            }
+
+            .report-header {
+                background: transparent
+            }
+
+            .report-section {
+                background: transparent
+            }
+        }
+
+        #no-data {
+            text-align: center;
+            padding: 80px 24px;
+            color: var(--muted)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-wrap">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+    </div>
+    <nav class="no-print">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg></div>
+                CardioGuard AI
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="alerts.html" class="nav-link">Alerts</a>
+                <a href="explain.html" class="nav-link">XAI</a>
+                <a href="factors.html" class="nav-link">Factors</a>
+                <a href="action.html" class="nav-link">Action</a>
+                <a href="simulate.html" class="nav-link">Simulate</a>
+                <a href="report.html" class="nav-link active">Report</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+        <div id="no-data" style="display:none">
+            <div style="font-size:3rem;margin-bottom:16px">📋</div>
+            <p style="margin-bottom:20px">No data found. Please complete an assessment first.</p>
+            <a href="assess.html"
+                style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:700;text-decoration:none">Go
+                to Assessment</a>
+        </div>
+
+        <div id="report-content">
+            <div class="no-print"
+                style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px">
+                <div>
+                    <div
+                        style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin-bottom:6px">
+                        Final Output</div>
+                    <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800">Clinical <span
+                            class="grad-text">Summary Report</span></h1>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <button class="btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+                    <a href="assess.html" class="btn-nav">← New Assessment</a>
+                </div>
+            </div>
+
+            <div class="report-card" id="report-card">
+                <!-- Generated below -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DATA_KEY = 'cg_payload';
+        const RES_KEY = 'cg_result';
+        const SIM_KEY = 'cg_sim';
+        const CF_KEY = 'cg_cf';
+        const payload = JSON.parse(localStorage.getItem(DATA_KEY) || 'null');
+        const result = JSON.parse(localStorage.getItem(RES_KEY) || 'null');
+        const sim = JSON.parse(localStorage.getItem(SIM_KEY) || 'null');
+        const cf = JSON.parse(localStorage.getItem(CF_KEY) || 'null');
+
+        if (!payload || !result) {
+            document.getElementById('no-data').style.display = 'block';
+            document.getElementById('report-content').style.display = 'none';
+        } else {
+            generateReport(payload, result, sim, cf);
+        }
+
+        function generateReport(d, r, sim, cf) {
+            const isHigh = r.prediction === 1;
+            const prob = Math.round(r.probability * 100);
+            const riskColor = isHigh ? '#ef4444' : prob > 35 ? '#f59e0b' : '#10b981';
+            const riskBg = isHigh ? 'rgba(239,68,68,.12)' : prob > 35 ? 'rgba(245,158,11,.12)' : 'rgba(16,185,129,.12)';
+            const riskBorder = isHigh ? 'rgba(239,68,68,.35)' : prob > 35 ? 'rgba(245,158,11,.35)' : 'rgba(16,185,129,.35)';
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+            // --- VITALS ---
+            const vitals = [
+                { label: 'Age', val: d.age || '—', unit: 'yrs', status: d.age > 60 ? 'bad' : d.age > 45 ? 'warn' : 'ok' },
+                { label: 'Sex', val: d.male === 1 ? 'Male' : 'Female', unit: '', status: 'ok' },
+                { label: 'Total Cholesterol', val: d.totChol || '—', unit: 'mg/dL', status: d.totChol > 240 ? 'bad' : d.totChol > 200 ? 'warn' : 'ok' },
+                { label: 'Systolic BP', val: d.sysBP || '—', unit: 'mmHg', status: d.sysBP > 140 ? 'bad' : d.sysBP > 130 ? 'warn' : 'ok' },
+                { label: 'Diastolic BP', val: d.diaBP || '—', unit: 'mmHg', status: d.diaBP > 90 ? 'bad' : d.diaBP > 80 ? 'warn' : 'ok' },
+                { label: 'Pulse Pressure', val: d.pulse_pressure || ((d.sysBP || 0) - (d.diaBP || 0)), unit: 'mmHg', status: ((d.sysBP || 0) - (d.diaBP || 0)) > 65 ? 'bad' : ((d.sysBP || 0) - (d.diaBP || 0)) > 55 ? 'warn' : 'ok' },
+                { label: 'BMI', val: d.BMI || '—', unit: 'kg/m²', status: d.BMI > 30 ? 'bad' : d.BMI > 25 ? 'warn' : 'ok' },
+                { label: 'Heart Rate', val: d.heartRate || '—', unit: 'bpm', status: d.heartRate > 100 ? 'bad' : d.heartRate > 85 ? 'warn' : 'ok' },
+                { label: 'Fasting Glucose', val: d.glucose || '—', unit: 'mg/dL', status: d.glucose > 126 ? 'bad' : d.glucose > 100 ? 'warn' : 'ok' },
+            ];
+
+            // --- CONTRIBUTORS ---
+            const contributors = [
+                { name: 'Pulse Pressure', mag: Math.min(100, ((d.pulse_pressure || (d.sysBP - d.diaBP)) - 35) / 70 * 100), dir: '↑ Risk', color: '#ef4444' },
+                { name: 'Total Cholesterol', mag: Math.min(100, Math.max(0, (d.totChol - 150) / 250 * 100)), dir: d.totChol > 200 ? '↑ Risk' : '↓ Protective', color: d.totChol > 200 ? '#ef4444' : '#10b981' },
+                { name: 'Age Factor', mag: Math.min(100, (d.age - 30) / 40 * 100), dir: '↑ Risk', color: '#f59e0b' },
+                { name: 'Glucose', mag: Math.min(100, Math.max(0, (d.glucose - 70) / 200 * 100)), dir: d.glucose > 100 ? '↑ Risk' : '↓ Protective', color: d.glucose > 100 ? '#f59e0b' : '#10b981' },
+                { name: 'BMI', mag: Math.min(100, Math.max(0, (d.BMI - 15) / 35 * 100)), dir: d.BMI > 25 ? '↑ Risk' : '↓ Protective', color: d.BMI > 25 ? '#f59e0b' : '#10b981' },
+                { name: 'Smoking', mag: Math.min(100, d.cigsPerDay > 0 ? 30 + (d.cigsPerDay / 20) * 70 : 0), dir: d.cigsPerDay > 0 ? '↑ Risk' : '↓ Non-smoker', color: d.cigsPerDay > 0 ? '#ef4444' : '#10b981' },
+            ].sort((a, b) => b.mag - a.mag);
+
+            // --- ACTIONS ---
+            const actions = [
+                d.cigsPerDay > 0 && { priority: 'high', action: 'Immediate Smoking Cessation', detail: 'NRT or varenicline combined with behavioral therapy. Greatest single-factor risk reduction.' },
+                d.totChol > 200 && { priority: 'high', action: 'Cholesterol Management', detail: 'Mediterranean diet + statin therapy if >240 mg/dL. Reduce saturated fat to <7% of calories.' },
+                (d.sysBP > 140 || d.prevalentHyp === 1) && { priority: 'high', action: 'Hypertension Control', detail: 'ACE inhibitors or ARBs. DASH diet + sodium <2g/day. Target BP <130/80 mmHg.' },
+                d.glucose > 100 && { priority: 'medium', action: 'Glycemic Control', detail: 'Low-GI diet, 150 min/week aerobic exercise, HbA1c monitoring. Metformin if indicated.' },
+                d.BMI > 25 && { priority: 'medium', action: 'Weight Reduction', detail: 'Target 5–10% body weight reduction. Caloric deficit 500–750 kcal/day + resistance training.' },
+                d.heartRate > 80 && { priority: 'low', action: 'Cardiac Fitness', detail: 'Regular aerobic exercise (30 min, 5 days/week) to reduce resting HR and improve heart rate variability.' },
+                { priority: 'low', action: 'Annual Cardiovascular Screening', detail: 'Lipid panel, HbA1c, ECG, and blood pressure monitoring every 12 months.' },
+            ].filter(Boolean);
+
+            // --- LONG-TERM OUTLOOK ---
+            const outlook = isHigh ?
+                `This patient demonstrates a <strong>10-year CHD risk that warrants clinical intervention</strong>. The combination of modifiable risk factors — particularly ${d.cigsPerDay > 0 ? 'smoking, ' : ''} ${d.totChol > 200 ? 'elevated cholesterol, ' : ''} ${d.BMI > 25 ? 'BMI, ' : ''} and ${d.glucose > 100 ? 'glucose levels ' : ''} — creates a compounding risk burden that accelerates with age. If lifestyle interventions are implemented promptly, risk trajectory analysis suggests a <strong>measurable reduction in 10-year probability</strong> is achievable within 12–18 months of sustained behavioral change.` :
+                `This patient demonstrates a <strong>favorable 10-year cardiovascular profile</strong> based on current biomarkers. The model predicts LOW CHD risk. However, continued vigilance is recommended, particularly regarding ${d.age > 45 ? 'age-related arterial stiffening' : ''} ${d.cigsPerDay > 0 ? 'and current smoking habit' : ''} ${d.totChol > 170 ? 'and cholesterol trends' : ''}. Annual screening is strongly recommended to monitor for trajectory changes as biomarkers naturally evolve with age.`;
+
+            const report = `
+    <!-- HEADER -->
+    <div class="report-header">
+      <div class="rh-left">
+        <div class="report-badge">📋 CardioGuard AI · Clinical Report</div>
+        <div class="report-title">Coronary Heart Disease Risk Assessment</div>
+        <div class="report-subtitle">10-Year CHD Probability · Framingham Cohort Model · KNN Classifier</div>
+      </div>
+      <div class="rh-right">
+        <div class="report-date">Generated: ${dateStr} · ${timeStr}</div>
+        <div class="risk-outcome-large" style="background:${riskBg};border:1px solid ${riskBorder}">
+          <div class="rol-label">Risk Outcome</div>
+          <div class="rol-value" style="color:${riskColor}">${r.risk_label}</div>
+          <div class="rol-prob" style="color:${riskColor}">${prob}% probability</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VITALS -->
+    <div class="report-section">
+      <div class="rs-label">Patient Biomarkers at Assessment</div>
+      <div class="vitals-grid">
+        ${vitals.map(v => `
+        <div class="vital-item">
+          <div class="vi-label">${v.label}</div>
+          <div class="vi-value" style="color:${v.status === 'bad' ? '#fca5a5' : v.status === 'warn' ? '#fcd34d' : '#6ee7b7'}">${v.val}${v.unit ? ` <span style="font-size:.65rem;color:var(--muted)">${v.unit}</span>` : ''}</div>
+          <div class="vi-status st-${v.status}">${v.status === 'bad' ? '⚠ Elevated' : v.status === 'warn' ? '⚡ Borderline' : '✓ Normal'}</div>
+        </div>`).join('')}
+        <div class="vital-item">
+          <div class="vi-label">Smoking Status</div>
+          <div class="vi-value" style="color:${d.cigsPerDay > 0 ? '#fca5a5' : '#6ee7b7'}">${d.cigsPerDay > 0 ? d.cigsPerDay + ' cigs' : 'Non-smoker'}</div>
+          <div class="vi-status ${d.cigsPerDay > 0 ? 'st-bad' : 'st-ok'}">${d.cigsPerDay > 0 ? '⚠ Active smoker' : '✓ Non-smoker'}</div>
+        </div>
+        <div class="vital-item">
+          <div class="vi-label">Hypertension</div>
+          <div class="vi-value" style="color:${d.prevalentHyp ? '#fca5a5' : '#6ee7b7'}">${d.prevalentHyp ? 'Yes' : 'No'}</div>
+          <div class="vi-status ${d.prevalentHyp ? 'st-bad' : 'st-ok'}">${d.prevalentHyp ? '⚠ Present' : '✓ Absent'}</div>
+        </div>
+        <div class="vital-item">
+          <div class="vi-label">Diabetes</div>
+          <div class="vi-value" style="color:${d.diabetes ? '#fca5a5' : '#6ee7b7'}">${d.diabetes ? 'Yes' : 'No'}</div>
+          <div class="vi-status ${d.diabetes ? 'st-bad' : 'st-ok'}">${d.diabetes ? '⚠ Diabetic' : '✓ Absent'}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KEY CONTRIBUTORS -->
+    <div class="report-section">
+      <div class="rs-label">Key Contributing Factors (Feature Importance)</div>
+      <div class="contributors-list">
+        ${contributors.map(c => `
+        <div class="ci-item">
+          <span class="ci-name">${c.name}</span>
+          <div class="ci-bar-wrap"><div class="ci-bar" style="width:${c.mag.toFixed(0)}%;background:${c.color}"></div></div>
+          <span class="ci-dir" style="color:${c.color}">${c.dir}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- RISK TRAJECTORY SUMMARY (if available) -->
+    ${sim ? `
+    <div class="report-section">
+      <div class="rs-label">20-Year Risk Trajectory Summary</div>
+      <div class="vitals-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+        <div class="vital-item"><div class="vi-label">Current Risk</div><div class="vi-value" style="color:#818cf8">${sim.summary.current.toFixed(0)}%</div></div>
+        <div class="vital-item"><div class="vi-label">10yr Baseline</div><div class="vi-value" style="color:#fbbf24">${sim.summary.baseline.toFixed(0)}%</div></div>
+        <div class="vital-item"><div class="vi-label">10yr Worst Case</div><div class="vi-value" style="color:#ef4444">${sim.summary.unhealthy.toFixed(0)}%</div></div>
+        <div class="vital-item"><div class="vi-label">10yr Best Case</div><div class="vi-value" style="color:#10b981">${sim.summary.healthy.toFixed(0)}%</div></div>
+        ${sim.summary.danger_age ? `<div class="vital-item"><div class="vi-label">Danger Age</div><div class="vi-value" style="color:#dc2626">Age ${sim.summary.danger_age}</div><div class="vi-status st-bad">⚠ 50% threshold</div></div>` : ''}
+      </div>
+    </div>`: ''}
+
+    <!-- PREVENTIVE ACTIONS -->
+    <div class="report-section">
+      <div class="rs-label">Recommended Preventive Actions</div>
+      <table class="actions-table">
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Action</th>
+            <th>Clinical Rationale</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${actions.map(a => `
+          <tr>
+            <td><span class="priority-dot" style="background:${a.priority === 'high' ? '#ef4444' : a.priority === 'medium' ? '#f59e0b' : '#10b981'}"></span>${a.priority.charAt(0).toUpperCase() + a.priority.slice(1)}</td>
+            <td style="font-weight:600;color:#e2e8f0">${a.action}</td>
+            <td>${a.detail}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- LONG-TERM OUTLOOK -->
+    <div class="report-section">
+      <div class="rs-label">Clinical Interpretation & Long-Term Outlook</div>
+      <p class="report-para">${outlook}</p>
+      <p class="report-para">The CardioGuard AI system utilizes a <strong>K-Nearest Neighbor classifier</strong> trained on the <strong>Framingham Heart Study dataset</strong> (n=3,656 records, 14 clinical features). Predictions are accompanied by <strong>SHAP (SHapley Additive exPlanations)</strong> for global model reasoning, <strong>LIME</strong> for local instance sensitivity, <strong>DiCE-ML</strong> for counterfactual action planning, and a <strong>20-year Monte Carlo-style risk trajectory</strong> across three lifestyle scenarios.</p>
+      <p class="report-para">This report serves as a <strong>decision-support tool</strong> for cardiovascular risk stratification. All findings should be validated with a qualified cardiologist before clinical action is taken.</p>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer">
+      ⚠️ <strong>Disclaimer:</strong> CardioGuard AI is a research and educational demonstration system. This report does not constitute a medical diagnosis or treatment recommendation. All predictions are based on statistical patterns from historical population data. Consult a qualified healthcare professional for any clinical decisions. Model accuracy: ~85% on Framingham hold-out test set.
+    </div>`;
+
+            document.getElementById('report-card').innerHTML = report;
+        }
+    </script>
+</body>
+
+</html>

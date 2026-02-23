@@ -1,0 +1,60 @@
+{
+    "version": 2,
+    "name": "cardioguard-ai",
+    "builds": [
+        {
+            "src": "frontend/**",
+            "use": "@vercel/static"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/",
+            "dest": "/frontend/index.html"
+        },
+        {
+            "src": "/assess",
+            "dest": "/frontend/assess.html"
+        },
+        {
+            "src": "/validate",
+            "dest": "/frontend/validate.html"
+        },
+        {
+            "src": "/processing",
+            "dest": "/frontend/processing.html"
+        },
+        {
+            "src": "/dashboard",
+            "dest": "/frontend/dashboard.html"
+        },
+        {
+            "src": "/alerts",
+            "dest": "/frontend/alerts.html"
+        },
+        {
+            "src": "/explain",
+            "dest": "/frontend/explain.html"
+        },
+        {
+            "src": "/factors",
+            "dest": "/frontend/factors.html"
+        },
+        {
+            "src": "/action",
+            "dest": "/frontend/action.html"
+        },
+        {
+            "src": "/simulate",
+            "dest": "/frontend/simulate.html"
+        },
+        {
+            "src": "/report",
+            "dest": "/frontend/report.html"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/frontend/$1"
+        }
+    ]
+}
