@@ -1,19 +1,13 @@
 /**
- * CardioGuard AI — Global Configuration
- * 
- * After deploying your backend to Render.com,
- * replace RENDER_URL below with your actual Render URL.
- * Example: "https://cardioguard-api.onrender.com"
- *
- * Leave as empty string "" to use localhost:8000 (local dev).
+ * CardioGuard AI - Global Configuration
+ * Backend deployed on Render.com
  */
 
 const CARDIOGUARD_CONFIG = {
-    // ← PASTE YOUR RENDER URL HERE AFTER DEPLOYING
-    API_BASE: ""
+    API_BASE: "https://cardioguard-api.hb0g.onrender.com"
 };
 
-// Auto-detect: if running on Vercel/production, use env; else use localhost
+// Auto-detect: if running on Vercel/production, use Render; else use localhost
 window.API_BASE = CARDIOGUARD_CONFIG.API_BASE || "http://localhost:8000";
 
 console.log("[CardioGuard] API Base:", window.API_BASE);
